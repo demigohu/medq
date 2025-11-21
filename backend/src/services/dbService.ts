@@ -342,10 +342,10 @@ export async function getUserStats(walletAddress: string): Promise<(UserStats & 
 
   return {
     ...(stats as UserStats),
-    rank: rank ?? undefined,
-    name: user?.name || undefined,
-    email: user?.email || undefined,
-    avatar_url: user?.avatar_url || undefined,
+    ...(rank !== null && rank !== undefined ? { rank } : {}),
+    ...(user?.name ? { name: user.name } : {}),
+    ...(user?.email ? { email: user.email } : {}),
+    ...(user?.avatar_url ? { avatar_url: user.avatar_url } : {}),
   }
 }
 
@@ -468,9 +468,9 @@ export async function getLeaderboard(limit: number = 100): Promise<(UserStats & 
     return {
       ...(stats as UserStats),
       rank: index + 1,
-      name: profile.name,
-      email: profile.email,
-      avatar_url: profile.avatar_url,
+      ...(profile.name ? { name: profile.name } : {}),
+      ...(profile.email ? { email: profile.email } : {}),
+      ...(profile.avatar_url ? { avatar_url: profile.avatar_url } : {}),
     }
   })
 }
