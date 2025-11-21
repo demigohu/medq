@@ -40,10 +40,10 @@ export function Footer() {
           <div className="col-span-2">
             <h4 className="font-semibold text-foreground mb-4 text-sm">Community</h4>
             <div className="flex gap-4">
-              <a href="https://twitter.com" className="text-muted-foreground hover:text-primary transition">
+              <a href="https://x.com/medqdefi" className="text-muted-foreground hover:text-primary transition">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="https://github.com" className="text-muted-foreground hover:text-primary transition">
+              <a href="https://github.com/demigohu/medq" className="text-muted-foreground hover:text-primary transition">
                 <Github className="w-5 h-5" />
               </a>
             </div>

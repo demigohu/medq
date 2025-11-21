@@ -1,6 +1,6 @@
 # Medq Quest – DeFi Gamification on Hedera
 
-Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. The project targets **Hedera Hello Future: Ascension Hackathon 2025**, **Theme 2 – DeFi & Tokenization (Intermediate: DeFi Gamification)**.
+Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. The project targets **Hedera Hello Future: Ascension Hackathon 2025**, **Theme 2 – DeFi & Tokenization**.
 
 ---
 
@@ -302,15 +302,15 @@ Frontend currently relies on manual QA; Cypress suite is planned post-hackathon.
   | Completion Oracle | `0xfDf033Ed041ce4F70c534fF8d79ac7B05681f9bc` |
   | Agent Controller | `0x8d50302F424f23f0B21c63B316b1a5308535b8BE` |
 
-- **Live demo**: _to be published (Vercel)_  
-- **API base**: _to be published (Railway/Fly)_  
+- **Live demo**: [Medq App](https://medq.space)  
+- **API base**: _https://api.medq.space_  
 
 ---
 
 ## 🎥 Demo Assets
-- **Live Demo URL**: _add once deployed_  
-- **Video Demo (YouTube, ≤5 min)**: _add link_  
-- **Pitch Deck (PDF)**: _add link_  
+- **Live Demo URL**: [Medq App](https://medq.space)
+- **Video Demo (YouTube)**: [Video Demo](https://youtu.be/wg6cnwwSqT8) 
+- **Pitch Deck (PDF)**: [Pitch Deck](https://www.canva.com/design/DAG5V0cF0Do/F8K48tVjqYH88-NSHA0sTQ/edit?utm_content=DAG5V0cF0Do&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
 ---
 
 
@@ -327,12 +327,8 @@ Frontend currently relies on manual QA; Cypress suite is planned post-hackathon.
 ## 👥 Team
 | Member | Role | Contact |
 | --- | --- | --- |
-| _(update)_ | Product & Partnerships | [LinkedIn](https://www.linkedin.com) |
-| _(update)_ | Smart Contracts & Backend | [LinkedIn](https://www.linkedin.com) |
-| _(update)_ | Frontend & UX | [LinkedIn](https://www.linkedin.com) |
-| _(optional)_ | AI/Agent Engineer | [LinkedIn](https://www.linkedin.com) |
-
-> Replace placeholders with actual team members before submission.
+| _demigohu_ | Smart Contracts & Backend | [LinkedIn](https://www.linkedin.com/in/tegaraji/) [Twitter/X](https://x.com/demigohu) |
+| _garrybad_ | Frontend & UX | [LinkedIn](https://www.linkedin.com/in/muhammad-garry/) [Twitter/X](https://x.com/itsktoru) |
 
 ---
 
@@ -341,17 +337,6 @@ Copyright Medq Quest team. Final license will follow hackathon requirements (def
 
 ---
 
-## 🔥 Evaluation Quick Reference
-- **Innovation** – Clear track/problem statement, novel quest UX.  
-- **Feasibility** – Architecture, run instructions, deployment proof.  
-- **Execution** – Live demo, video walkthrough, working contracts.  
-- **Integration** – Explicit Hedera services, tx evidence, Mirror Node flow.  
-- **Success & Validation** – Leaderboard metrics, user feedback snippets (add to deck).  
-- **Validation** – Early testers, side quest completions, AMA participation.  
-- **Pitch** – Concise storytelling + demo video + deck.
-
----
-
 ## 📮 Contact
     
-- Twitter: `@medqdefi`
+- [Twitter/X](https://x.com/medqdefi)
