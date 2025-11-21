@@ -38,34 +38,46 @@ Medq Quest orchestrates ERC‑8004 agents, AI quest generation, and Hedera-nativ
 ---
 
 ## 🏗️ Architecture Diagram
+
+```mermaid
+graph LR
+  subgraph Frontend
+    A["Next.js 16 App<br/>App Router · TanStack Query · Zustand"]
+    W["Wagmi + Reown AppKit<br/>Hedera Testnet (chain 296)"]
+    C["Client Cache<br/>Zustand / cookies"]
+  end
+
+  subgraph Backend
+    B["Express API<br/>/ai, /quests, /submit-proof"]
+    S["Supabase Postgres<br/>quests, submissions, stats, leaderboard"]
+    J["Cron & AI Jobs<br/>Groq, Pinata, daily/weekly quests"]
+  end
+
+  subgraph Hedera
+    M["Hedera Mirror Node<br/>tx verification"]
+    QM["QuestManager.sol<br/>ERC-8004 orchestrator"]
+    RV["RewardVault.sol<br/>MEDQ ERC-20"]
+    BN["BadgeNFT.sol<br/>ERC-721 rewards"]
+    REG["ERC-8004 Registries<br/>Agent, Reputation, Validation, Identity"]
+  end
+
+  W -->|sign tx| QM
+  A -->|REST quests/stats| B
+  B -->|responses| A
+  B -->|metadata + XP| S
+  S -->|leaderboard + quests| A
+  C --> A
+
+  J -->|quest drafts + Pinata uploads| B
+  J -->|daily/weekly quests| S
+
+  B -->|verify tx hash| M
+  B -->|recordCompletion oracle| QM
+  QM -->|release MEDQ| RV
+  QM -->|mint badge| BN
+  QM -->|submit reputation| REG
 ```
-┌────────────────────┐     wagmi / Reown / WalletConnect     ┌──────────────────────┐
-│  Next.js Frontend  │──────────────────────────────────────▶│  Express + Supabase  │
-│  (quests, profile) │◀─────────────react-query cache────────│  API Layer           │
-└─────────┬──────────┘                                       └──────────┬───────────┘
-          │  quest metadata / XP / submissions (REST)                    │ oracle credentials
-          │                                                              │ AI quest gen (Groq)
-          ▼                                                              ▼
-   ┌──────────────┐                                          ┌────────────────────────┐
-   │   Supabase   │◀──── leaderboard / stats sync ───────────│  Quest Cron + AI Jobs  │
-   │ (Postgres)   │                                          └──────────┬─────────────┘
-   └─────┬────────┘                                                     │ recordCompletion
-         │ quest_id / tx proofs                                         │
-         ▼                                                              ▼ Hedera JSON-RPC
-┌────────────────────┐     ERC‑8004 agent call      ┌────────────────────────────────┐
-│  Groq Quest Agent  │─────────────────────────────▶│  Hedera EVM: QuestManager.sol   │
-│  (prompt + Pinata) │                              │  RewardVault.sol (ERC-20 MEDQ)  │
-└────────────────────┘                              │  BadgeNFT.sol (ERC-721)         │
-                                                    └────────────────────────────────┘
-                                                            ▲
-                                                            │ Mirror Node verification
-                                                            ▼
-                                                   ┌──────────────────┐
-                                                   │  Hedera Mirror   │
-                                                   │  Node API        │
-                                                   └──────────────────┘
-```
-> For submission, export a polished PNG/SVG based on this diagram and place it at `public/architecture.png`. Update the README to embed the image once available.
+
 
 ---
 
@@ -93,7 +105,7 @@ Medq Quest orchestrates ERC‑8004 agents, AI quest generation, and Hedera-nativ
 ├── backend/                     # Express + Supabase + Groq AI backend
 │   ├── src/                     # routes, services, cron jobs, lib
 │   ├── database/                # Supabase schema & helpers
-│   ├── .env              # backend env template
+│   ├── env.example              # backend env template
 │   ├── package.json
 │   └── README.md
 ├── contracts/                   # Foundry workspace (QuestManager, RewardVault, BadgeNFT)
