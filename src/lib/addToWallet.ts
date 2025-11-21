@@ -35,7 +35,7 @@ export async function addTokenToWallet(): Promise<{ success: boolean; message: s
   }
 
   try {
-    const wasAdded = await window.ethereum.request({
+    const wasAdded = await window.ethereum?.request({
       method: "wallet_watchAsset",
       params: {
         type: "ERC20",

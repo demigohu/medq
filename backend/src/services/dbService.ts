@@ -342,7 +342,7 @@ export async function getUserStats(walletAddress: string): Promise<(UserStats & 
 
   return {
     ...(stats as UserStats),
-    rank,
+    rank: rank ?? undefined,
     name: user?.name || undefined,
     email: user?.email || undefined,
     avatar_url: user?.avatar_url || undefined,

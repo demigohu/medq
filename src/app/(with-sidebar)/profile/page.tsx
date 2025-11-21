@@ -65,6 +65,15 @@ export default function ProfilePage() {
     )
   }
 
+    // Type guard: user must not be null at this point
+    if (!user) {
+      return (
+        <main className="bg-background text-foreground min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </main>
+      )
+    }
+
   return (
     <main className="bg-background text-foreground">
       {/* Header */}
