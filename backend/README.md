@@ -1,153 +1,132 @@
 # Medq Quest Backend
 
-Express + TypeScript service yang memegang kredensial agent/oracle untuk berinteraksi dengan kontrak Hedera testnet.
+TypeScript + Express service that holds the quest agent/oracle credentials, talks to Hedera (EVM + Mirror Node), orchestrates AI quest generation, and persists metadata in Supabase.
 
-## Menjalankan
+---
 
-1. Setup Supabase Database:
-   - Buat project baru di [Supabase](https://supabase.com)
-   - Copy SQL schema dari `database/schema.sql` dan jalankan di SQL Editor
-   - Ambil `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` dari Project Settings → API
+## Getting Started
 
-2. Salin `env.example` menjadi `.env` dan isi:
-   - RPC, private key controller/agent, alamat kontrak
-   - `GROQ_API_KEY` (untuk AI quest generation)
-   - `PINATA_JWT` (untuk upload metadata ke IPFS)
-   - `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` (untuk database)
-3. Instal dependensi:
+1. **Prepare Supabase**
+   - Create a project on [Supabase](https://supabase.com).
+   - Run the SQL in `database/schema.sql`.
+   - Grab `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` from Project Settings → API.
+
+2. **Configure environment**
+   - Copy `env.example` → `.env`.
+   - Fill in RPC URL, quest agent controller key, completion oracle key, deployed contract addresses, Groq, Pinata, Supabase, and Mirror Node URLs.
+
+3. **Install dependencies**
    ```bash
    cd backend
    npm install
    ```
-3. Jalankan mode pengembangan:
+
+4. **Run**
    ```bash
-   npm run dev
-   ```
-   atau build + start:
-   ```bash
-   npm run build
-   npm start
+   npm run dev         # watch mode on :4000
+   npm run build && npm start   # production
    ```
 
-## Supported DeFi Protocols
+---
 
-Backend mendukung quest generation untuk protokol DeFi berikut di Hedera Testnet:
+## Supported Hedera DeFi Protocols
+Used when generating quests via `POST /ai/quests`. See `GET /ai/protocols` for the live list.
 
-- **SaucerSwap Finance** (`0x0000000000000000000000000000000000004b40`)
-  - Category: Swap
-  - Website: https://testnet.saucerswap.finance/swap
-  - Description: Decentralized exchange for token swaps
+| Protocol | Category | Address | Notes |
+| --- | --- | --- | --- |
+| SaucerSwap Finance | Swap | `0x0000000000000000000000000000000000004b40` | DEX on Hedera Testnet |
+| Bonzo Finance | Lending | `0x118dd8f2c0f2375496df1e069af1141fa034251b` | Lending + borrowing |
 
-- **Bonzo Finance** (`0x118dd8f2c0f2375496df1e069af1141fa034251b`)
-  - Category: Lending & Borrowing
-  - Website: https://testnet.bonzo.finance/
-  - Description: Lending and borrowing protocol
+Add new protocols in `src/lib/protocols.ts`.
 
-Gunakan alamat protokol ini saat membuat quest via `POST /ai/quests`. Lihat `GET /ai/protocols` untuk list lengkap.
+---
 
-## Endpoint
+## REST API Overview
 
-- `GET /health` – cek status backend.
-- `GET /ai/protocols` – get list protocol yang tersedia untuk quest generation.
-- `GET /quests/:id` – baca detail quest langsung dari kontrak.
-- `GET /quests/:id/progress/:participant` – baca status accepted/completed untuk participant tertentu.
-- `GET /quests/leaderboard?limit=100` – get leaderboard top users by XP (dari database).
-- `GET /quests/users/:address/stats` – get user stats (XP, completed quests, level, rank).
-- `POST /ai/quests` – minta AI (Groq) menyusun & (opsional) langsung deploy quest ke chain (upload metadata ke Pinata IPFS → `createQuest` on-chain → save ke database).
-- `POST /quests/:id/submit-proof` – user kirim tx hash sebagai bukti penyelesaian quest. Backend akan:
-  1. Query quest details untuk verifikasi participant & status (harus aktif, belum expired).
-  2. Verifikasi progress participant (sudah accept, belum completed).
-  3. Cek duplikasi tx hash via database (prevent double submission).
-  4. Simpan submission ke database (status: pending).
-  5. Verifikasi tx hash via Hedera Mirror Node (cek status SUCCESS, from/to addresses).
-  6. Update submission status ke verified/failed di database.
-  7. Auto trigger `recordCompletion` jika verifikasi sukses (oracle sign completion → RewardVault transfer MEDQ, BadgeNFT mint, ReputationRegistry update).
-  8. Record XP gain ke database (auto-update user_stats via trigger).
-- `POST /quests/:id/complete` – endpoint manual khusus oracle untuk menyelesaikan quest (jika tidak pakai auto-completion flow).
+| Endpoint | Description |
+| --- | --- |
+| `GET /health` | Service & RPC status. |
+| `GET /ai/protocols` | Supported DeFi protocols for quest generation. |
+| `POST /ai/quests` | Groq-powered quest generator (optionally auto-deploys on-chain + Pinata upload). |
+| `GET /quests/:id` | Fetch quest details straight from QuestManager. |
+| `GET /quests/:id/progress/:participant` | On-chain accepted/completed flags for a participant. |
+| `GET /quests` | List active quests (optionally filter by participant). |
+| `GET /quests/leaderboard?limit=100` | Supabase-backed XP leaderboard. |
+| `GET /quests/users/:address/stats` | XP, level, completed quests, rank. |
+| `POST /quests/:id/submit-proof` | Verify tx hash via Mirror Node, persist submission, auto-call `recordCompletion`. |
+| `POST /quests/:id/complete` | Manual oracle completion (fallback if auto flow fails). |
+| `POST /quests/users/:address/profile` | Save name/email, then auto-generate daily/weekly quests. |
+| `PATCH /quests/users/:address/avatar` | Update avatar URL. |
+| `POST /quests/users/:address/generate-quests` | Force-generate daily/weekly quests. |
+| `GET /quests/users/:address/rewards` | Read MEDQ payouts + BadgeNFT history. |
+| `GET /quests/users/:address/completed` | Completed quest list with submission hashes. |
 
-Semua endpoint menerima/merespons JSON. Pastikan wallet yang dipakai sudah didaftarkan sebagai agent serta completion oracle di kontrak. Set `MIRROR_NODE_URL` di `.env` untuk verifikasi tx hash (default: Hedera testnet Mirror Node). Semua data (quest metadata, submissions, XP, leaderboard) tersimpan di Supabase database.
+All endpoints accept/return JSON. Make sure the oracle wallet used by the backend is authorized via `QuestManager.setCompletionOracle`, and that `MIRROR_NODE_URL` points to a Hedera Mirror Node endpoint (default: testnet).
+
+---
+
+## Submit-Proof Flow
+When a participant submits a transaction hash (`POST /quests/:id/submit-proof`), the backend:
+1. Reads quest info to confirm status + participant assignment.
+2. Checks participant progress (must be accepted, not completed).
+3. Ensures the tx hash has not been submitted before.
+4. Calls Hedera Mirror Node to confirm the transaction (status, from/to).
+5. Writes the submission (pending → verified/failed) to Supabase.
+6. If verified, calls `recordCompletion` on QuestManager (oracle signs).
+7. Rewards MEDQ via `RewardVault`, mints BadgeNFT, stores XP gain in Supabase.
+
+---
 
 ## Testing
 
-Backend menggunakan Jest + Supertest untuk testing. Test files berada di `src/**/__tests__/` dan `src/**/*.test.ts`.
-
-### Menjalankan Tests
+Tests live under `src/**/__tests__` and `src/**/*.test.ts`. Frameworks: Jest + Supertest.
 
 ```bash
-# Run semua tests
-npm test
-
-# Run tests dengan watch mode (auto-reload saat file berubah)
-npm run test:watch
-
-# Run tests dengan coverage report
+npm test            # run once
+npm run test:watch  # watch mode
 npm run test:coverage
+npm run test:flow   # scripted API regression (skips submit-proof because it needs a real tx)
 ```
 
-### Test Files
+Recommended setup for external deps:
+1. Create `.env.test` (or mock services) for Groq, Supabase, Mirror Node.
+2. Unit tests: mock external calls.
+3. Integration tests: use dedicated Supabase schema/test keys.
 
-- `src/__tests__/health.test.ts` - Health check endpoint test
-- `src/__tests__/helpers.ts` - Test utilities & helpers
-- `src/lib/__tests__/protocols.test.ts` - Protocol definitions unit tests
-- `src/routes/__tests__/ai.test.ts` - AI routes integration tests
-
-### Test Environment
-
-Untuk tests yang memerlukan external services (Supabase, Groq, Mirror Node), pastikan:
-1. Buat file `.env.test` dengan test credentials (opsional, atau gunakan mocks)
-2. Untuk unit tests, gunakan mocks untuk external services
-3. Untuk integration tests, gunakan test credentials yang terpisah
-
-### Menulis Test Baru
-
-Contoh test endpoint:
-
-```typescript
+### Example test snippet
+```ts
 import { testApp } from "../../__tests__/helpers"
 import express from "express"
 
 const app = express()
-app.get("/test", (req, res) => res.json({ ok: true }))
+app.get("/test", (_req, res) => res.json({ ok: true }))
 
 describe("Test Endpoint", () => {
-  it("should return ok", async () => {
-    const response = await testApp(app).get("/test")
-    expect(response.status).toBe(200)
-    expect(response.body).toEqual({ ok: true })
+  it("returns ok", async () => {
+    const res = await testApp(app).get("/test")
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: true })
   })
 })
 ```
 
-## Manual Testing (API Testing)
+---
 
-Untuk menguji fitur-fitur utama backend sebelum integrasi ke frontend:
+## Manual API Testing
 
-### Quick Start
-
-1. Pastikan backend server running:
+1. Start the dev server:
    ```bash
    npm run dev
    ```
-
-2. Jalankan automated test flow:
+2. Run scripted flow:
    ```bash
    npm run test:flow
    ```
-   Ini akan test semua endpoint utama kecuali submit-proof (karena memerlukan tx hash real).
+3. For ad hoc calls, use `test-api.http` + VS Code REST Client (adjust `@questId`, `@txHash`, `@participant`).
+4. Full end-to-end path: **Generate Quest → Accept on-chain → Execute action → Submit Proof**. See `TESTING.md` for detailed walkthroughs and sample hashes.
 
-3. Atau gunakan HTTP file untuk manual testing:
-   - Install REST Client extension di VS Code
-   - Buka `test-api.http`
-   - Edit variables (`@questId`, `@txHash`, `@participant`)
-   - Klik "Send Request" di atas setiap request
-
-4. Untuk testing lengkap (termasuk quest completion):
-   - Lihat `TESTING.md` untuk panduan lengkap
-   - Flow: Generate Quest → Accept Quest (on-chain) → Complete Action → Submit Proof
-
-### Test Endpoints Secara Manual
-
-**1. Test AI Quest Generation:**
+### Curl examples
+**Generate quest**
 ```bash
 curl -X POST http://localhost:4000/ai/quests \
   -H "Content-Type: application/json" \
@@ -163,12 +142,12 @@ curl -X POST http://localhost:4000/ai/quests \
   }'
 ```
 
-**2. Test Read Quest:**
+**Read quest**
 ```bash
 curl http://localhost:4000/quests/1
 ```
 
-**3. Test Submit Proof (setelah user accept & complete action):**
+**Submit proof**
 ```bash
 curl -X POST http://localhost:4000/quests/1/submit-proof \
   -H "Content-Type: application/json" \
@@ -178,6 +157,15 @@ curl -X POST http://localhost:4000/quests/1/submit-proof \
   }'
 ```
 
-Lihat `TESTING.md` untuk dokumentasi lengkap testing semua fitur utama.
+---
 
+## Notes
+- Keep `.env` synced with the latest contract addresses (QuestManager, RewardVault, BadgeNFT, ERC‑8004 registries).
+- Supabase stores quest metadata, submissions, XP stats, and leaderboard.
+- Mirror Node URL defaults to Hedera Testnet (`https://testnet.mirrornode.hedera.com/api/v1`); change if you run your own node.
+- Groq + Pinata credentials are required if you want `POST /ai/quests` to auto-generate + auto-deploy quests.
 
+For deeper details (cron jobs, DB schema, scripted flows), refer to:
+- `database/schema.sql`
+- `src/cron/*`
+- `scripts/test-flow.ts`

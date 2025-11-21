@@ -1,0 +1,51 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Thing",
+  "name": "MEDQ Swap Quest #1",
+  "description": "Swap minimal 25 USDC-equivalent di Saucerswap DEX untuk mendapatkan reward MEDQ token dan badge NFT Level 1",
+  "category": "Swap",
+  "protocol": {
+    "@type": "SoftwareApplication",
+    "name": "Saucerswap",
+    "url": "https://saucerswap.finance"
+  },
+  "requirements": {
+    "minAmount": "25000000",
+    "minAmountCurrency": "USDC",
+    "decimals": 6,
+    "tokenPair": "HBAR/USDC",
+    "dexProtocol": "Saucerswap"
+  },
+  "rewards": {
+    "@type": "Offer",
+    "tokenReward": {
+      "token": "MEDQ",
+      "amount": "1000000000",
+      "decimals": 8
+    },
+    "badgeReward": {
+      "type": "NFT",
+      "level": 1,
+      "name": "Swap Master Level 1"
+    }
+  },
+  "questDetails": {
+    "maxParticipants": 100,
+    "expiryDate": "2025-02-27T00:00:00Z",
+    "difficulty": "Easy",
+    "estimatedTime": "5 minutes"
+  },
+  "instructions": [
+    "1. Connect wallet ke dApp MEDQ",
+    "2. Accept quest di dashboard",
+    "3. Perform swap di Saucerswap dengan minimal 25 USDC-equivalent",
+    "4. Submit transaction hash sebagai evidence",
+    "5. Receive MEDQ reward dan badge NFT"
+  ],
+  "metadata": {
+    "version": "1.0",
+    "createdBy": "QuestMaster AI",
+    "agentId": 1
+  }
+}
+
