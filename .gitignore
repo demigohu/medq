@@ -60,8 +60,11 @@ next-env.d.ts
 # Keep lib/ folder but ignore all its contents
 /contracts/lib/*
 !/contracts/lib/.gitkeep
+/contracts/lib/**/.github/
+/contracts/lib/**/.github/*
+/contracts/lib/**/.gitignore
+/contracts/lib/**/.gitattributes
 /contracts/cache/
-/contracts/out/
 /contracts/broadcast/*/31337/
 /contracts/broadcast/**/dry-run/
 /contracts/.env
