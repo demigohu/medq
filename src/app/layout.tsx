@@ -38,11 +38,11 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
-            suppressHydrationWarning
+            // suppressHydrationWarning
           >
-            <ConditionalNavbar />
+            {/* <ConditionalNavbar /> */}
             {children}
-            <ConditionalFooter />
+            {/* <ConditionalFooter /> */}
           </ThemeProvider>
         </ReownProvider>
       </body>
