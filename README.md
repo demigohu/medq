@@ -1,17 +1,12 @@
 # Medq Quest – DeFi Gamification on Hedera
 
-Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. The project targets **Hedera Hello Future: Ascension Hackathon 2025**, **Theme 2 – DeFi & Tokenization**.
+Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. The project targets.
 
 ---
 
 ## 📌 Project Summary
 Medq Quest is an on-chain quest platform on Hedera that combines an AI quest generator with automatic proof verification. Users accept DeFi quests (swap, stake, lend), submit a transaction hash as evidence, have it verified via Mirror Node, and automatically receive MEDQ + badge NFTs from the QuestManager contract.
 
----
-
-## 🚀 Hackathon Track & Problem Statement
-- **Track**: Theme 2 – DeFi & Tokenization  
-- **Problem Statement**: Intermediate – DeFi Gamification (turn DeFi activities into quests with on-chain rewards)
 
 ---
 
@@ -130,7 +125,7 @@ graph LR
 ├── postcss.config.mjs
 ├── tsconfig.json
 ├── REOWN_SETUP.md               # Wallet setup steps
-└── README.md                    # Hackathon-focused overview (this file)
+└── README.md                    # 
 ```
 
 ---
@@ -271,7 +266,7 @@ cd ../contracts
 forge build
 forge test
 ```
-Frontend currently relies on manual QA; Cypress suite is planned post-hackathon.
+Frontend currently relies on manual QA; Cypress suite is planned
 
 ---
 
@@ -315,7 +310,7 @@ Frontend currently relies on manual QA; Cypress suite is planned post-hackathon.
 
 
 
-## 🗺 Roadmap (Post-Hackathon)
+## 🗺 Roadmap 
 - **Q1 2026** – Expand Hedera Agent Kit flows for multi-agent quest curation and protocol-specific templates.  
 - **Q2 2026** – MEDQ staking & DAO-style quest governance (voting on quest budgets, reward multipliers).  
 - **Q3 2026** – Mobile app + push notifications via WalletConnect/XMTP; richer quest analytics in dashboards.  
@@ -333,7 +328,7 @@ Frontend currently relies on manual QA; Cypress suite is planned post-hackathon.
 ---
 
 ## 🤝 License
-Copyright Medq Quest team. Final license will follow hackathon requirements (default MIT unless specified).
+Copyright Medq Quest team. Final license (default MIT unless specified).
 
 ---
 
