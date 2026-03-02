@@ -14,6 +14,7 @@ const envSchema = z.object({
   // Legacy support: jika masih pakai PRIVATE_KEY, akan digunakan untuk agent controller
   PRIVATE_KEY: z.string().min(10).optional(),
   QUEST_MANAGER_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  QUEST_MANAGER_CONTRACT_ID: z.string().regex(/^0\.0\.\d+$/).optional(),
   REWARD_VAULT_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   BADGE_NFT_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   REPUTATION_REGISTRY_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),

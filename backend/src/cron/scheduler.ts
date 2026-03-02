@@ -2,6 +2,8 @@ import cron from "node-cron"
 import { generateDailyQuest, generateWeeklyQuest } from "../services/dailyWeeklyQuestService"
 import { getUserActiveQuests } from "../services/dailyWeeklyQuestService"
 import { supabase } from "../lib/supabase"
+import { runAutoVerifyOnce } from "../services/autoVerifyService"
+import { runQuestAcceptedWatcherOnce } from "../services/questEventWatcher"
 
 // Helper function untuk get active users (yang sudah complete profile)
 async function getActiveUsers() {

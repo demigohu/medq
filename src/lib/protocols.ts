@@ -6,6 +6,7 @@ export interface Protocol {
   website: string
   description: string
   logo?: string // Protocol logo URL or IPFS path
+  routerAddresses?: string[] // Optional: router/proxy contracts
 }
 
 export const PROTOCOLS: Record<string, Protocol> = {
@@ -17,6 +18,11 @@ export const PROTOCOLS: Record<string, Protocol> = {
     website: "https://testnet.saucerswap.finance/swap",
     description: "Decentralized exchange for token swaps on Hedera Testnet",
     logo: "ipfs://bafkreid64ufj4jk7dih5qio5ve6gvprdmfmbgfdxmyxha454pbhdb2wh4m",
+    routerAddresses: [
+      "0x0000000000000000000000000000000000004b40",
+      "0x000000000000000000000000000000000046ff9b",
+      "0x0000000000000000000000000000000000159398",
+    ],
   },
   BONZO: {
     name: "Bonzo Finance",
@@ -36,7 +42,9 @@ export function getProtocolByAddress(address: string): Protocol | null {
   const normalized = address.toLowerCase()
   return (
     Object.values(PROTOCOLS).find(
-      (p) => p.evmAddress.toLowerCase() === normalized
+      (p) =>
+        p.evmAddress.toLowerCase() === normalized ||
+        p.routerAddresses?.some((router) => router.toLowerCase() === normalized)
     ) || null
   )
 }

@@ -26,6 +26,7 @@ export interface Quest {
   badge_level?: number
   assigned_participant?: string
   expiry_timestamp?: number
+  accepted_at?: string | null
   status: string
   quest_type?: "daily" | "weekly" | "custom"
   created_at: string
@@ -181,6 +182,78 @@ export async function getQuestByOnChainId(questIdOnChain: number): Promise<Quest
 }
 
 /**
+ * Update accepted_at timestamp for quest (from on-chain events)
+ */
+export async function setQuestAcceptedAt(
+  questIdOnChain: number,
+  acceptedAtIso: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("quests")
+    .update({
+      accepted_at: acceptedAtIso,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("quest_id_on_chain", questIdOnChain)
+
+  if (error) {
+    throw new Error(`Failed to update accepted_at: ${error.message}`)
+  }
+}
+
+/**
+ * Get active quests for auto verification polling
+ */
+export async function getActiveQuestsForAutoVerify(limit: number = 50): Promise<Quest[]> {
+  const now = Math.floor(Date.now() / 1000)
+  const { data, error } = await supabase
+    .from("quests")
+    .select("*")
+    .eq("status", "active")
+    .not("assigned_participant", "is", null)
+    .or(`expiry_timestamp.is.null,expiry_timestamp.gt.${now}`)
+    .order("created_at", { ascending: true })
+    .limit(limit)
+
+  if (error || !data) {
+    return []
+  }
+
+  return data as Quest[]
+}
+
+/**
+ * Cron cursor helpers (for event polling)
+ */
+export async function getCronCursor(key: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("cron_state")
+    .select("value")
+    .eq("key", key)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data.value ?? null
+}
+
+export async function setCronCursor(key: string, value: string): Promise<void> {
+  const { error } = await supabase
+    .from("cron_state")
+    .upsert({
+      key,
+      value,
+      updated_at: new Date().toISOString(),
+    })
+
+  if (error) {
+    throw new Error(`Failed to update cron cursor: ${error.message}`)
+  }
+}
+
+/**
  * Save quest submission (tx hash proof)
  */
 export async function saveQuestSubmission(submission: {
@@ -241,6 +314,24 @@ export async function isTransactionHashSubmitted(
     .single()
 
   return !error && !!data
+}
+
+/**
+ * Check if transaction hash was already used by this participant for any quest.
+ * Prevents one tx from auto-completing multiple quests (e.g. daily + weekly).
+ */
+export async function isTransactionHashUsedByParticipant(
+  participantAddress: string,
+  txHash: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("quest_submissions")
+    .select("id")
+    .eq("participant_address", participantAddress.toLowerCase())
+    .eq("transaction_hash", txHash)
+    .limit(1)
+
+  return !error && !!data && data.length > 0
 }
 
 /**

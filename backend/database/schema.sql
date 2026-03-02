@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS quests (
   assigned_participant TEXT, -- Address user yang ditugaskan
   expiry_timestamp BIGINT, -- Unix timestamp expiry
   status TEXT DEFAULT 'active', -- active, completed, cancelled, expired
+  accepted_at TIMESTAMP WITH TIME ZONE, -- Timestamp saat quest di-accept on-chain
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -45,6 +46,14 @@ CREATE INDEX IF NOT EXISTS idx_quests_quest_id_on_chain ON quests(quest_id_on_ch
 CREATE INDEX IF NOT EXISTS idx_quests_status ON quests(status);
 CREATE INDEX IF NOT EXISTS idx_quests_assigned_participant ON quests(assigned_participant);
 CREATE INDEX IF NOT EXISTS idx_quests_created_at ON quests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quests_accepted_at ON quests(accepted_at DESC);
+
+-- Cron state table (for polling cursors)
+CREATE TABLE IF NOT EXISTS cron_state (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Quest submissions: log semua submission tx hash dari user
 CREATE TABLE IF NOT EXISTS quest_submissions (

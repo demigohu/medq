@@ -7,7 +7,7 @@ import { env } from "../config/env"
 import { createQuest, getQuestById } from "./questService"
 import { uploadQuestMetadata } from "./ipfsService"
 import { logAIGeneration, saveQuest } from "./dbService"
-import { getProtocolByAddress, PROTOCOLS } from "../lib/protocols"
+import { getProtocolByAddress, getProtocolRouterAddress, PROTOCOLS } from "../lib/protocols"
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/
 
@@ -124,6 +124,7 @@ export async function generateQuestWithGroq(rawInput: unknown) {
   })) as QuestDraft
 
   let onChainResult: Awaited<ReturnType<typeof createQuest>> | undefined
+  const protocolAddressToUse = getProtocolRouterAddress(input.protocol)
 
   // Prepare metadata payload (used for both auto-deploy and logging)
   // Include protocol logo as banner if available
@@ -156,7 +157,7 @@ export async function generateQuestWithGroq(rawInput: unknown) {
 
     onChainResult = await createQuest({
       category: questDraft.recommendedCategory,
-      protocol: input.protocol,
+      protocol: protocolAddressToUse,
       metadataURI,
       rewardAmount: input.rewardAmount,
       badgeLevel: input.badgeLevel,
@@ -176,7 +177,7 @@ export async function generateQuestWithGroq(rawInput: unknown) {
       description: questDraft.shortSummary,
       project_name: input.projectName,
       category: questDraft.recommendedCategory,
-      protocol_address: input.protocol,
+      protocol_address: protocolAddressToUse,
       metadata_uri: metadataURI,
       reward_per_participant: input.rewardAmount,
       badge_level: input.badgeLevel,

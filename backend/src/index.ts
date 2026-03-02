@@ -6,9 +6,11 @@ import { aiRouter } from "./routes/ai"
 import { questProofsRouter } from "./routes/questProofs"
 import { questsRouter } from "./routes/quests"
 import { recordCompletion } from "./services/questService"
+import { startQuestPolling } from "./polling/questPolling"
 
 // Import cron scheduler (akan start otomatis saat server start)
 import "./cron/scheduler"
+startQuestPolling()
 
 const app = express()
 
