@@ -1,6 +1,7 @@
 import { env } from "../config/env"
 import { findMatchingTransactionHash } from "./mirrorNodeService"
 import { getParticipantProgress, recordCompletion } from "./questService"
+import { fetchQuestMetadataFromIpfs } from "./ipfsService"
 import {
   getActiveQuestsForAutoVerify,
   isTransactionHashSubmitted,
@@ -62,6 +63,8 @@ export async function runAutoVerifyOnce() {
 
       const sinceEpoch = acceptedAtEpoch
 
+      const metadata = await fetchQuestMetadataFromIpfs(quest.metadata_uri)
+
       console.log(
         `[AUTO-VERIFY] Searching tx for quest ${quest.quest_id_on_chain} (participant=${quest.assigned_participant}, protocol=${quest.protocol_address}, since=${sinceEpoch})`
       )
@@ -69,7 +72,13 @@ export async function runAutoVerifyOnce() {
       const txHash = await findMatchingTransactionHash(
         quest.assigned_participant,
         quest.protocol_address,
-        sinceEpoch
+        sinceEpoch,
+        {
+          verificationParams: metadata?.verificationParams ?? null,
+          ...((metadata?.category ?? quest.category) && {
+            protocolCategory: metadata?.category ?? quest.category,
+          }),
+        }
       )
 
       if (!txHash) {

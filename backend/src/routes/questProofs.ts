@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { recordCompletion, getQuestById, getParticipantProgress } from "../services/questService"
 import { verifyTransactionHash } from "../services/mirrorNodeService"
+import { fetchQuestMetadataFromIpfs } from "../services/ipfsService"
 import {
   isTransactionHashSubmitted,
   saveQuestSubmission,
@@ -81,11 +82,21 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
       })
     }
 
+    // Fetch DB quest for metadata_uri, then IPFS for verificationParams (Proof Verification v2)
+    const dbQuest = await getQuestByOnChainId(questId)
+    const metadataUri = (quest as { metadataURI?: string }).metadataURI ?? dbQuest?.metadata_uri
+    const metadata = await fetchQuestMetadataFromIpfs(metadataUri)
+
     // Verify transaction hash via Hedera Mirror Node (query first before saving)
+    const protocolCategory = metadata?.category ?? dbQuest?.category
     const verification = await verifyTransactionHash(
       parsed.transactionHash,
       participant, // expected from address
-      quest.protocol // expected to address (protocol address from quest)
+      quest.protocol, // expected to address (protocol address from quest)
+      {
+        verificationParams: metadata?.verificationParams ?? null,
+        ...(protocolCategory ? { protocolCategory } : {}),
+      }
     )
 
     if (!verification.valid) {
@@ -124,9 +135,6 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
 
     // Update submission with completion tx hash
     await updateSubmissionCompletion(questId, parsed.transactionHash, completionResult.transactionHash)
-
-    // Get quest from DB to extract XP reward
-    const dbQuest = await getQuestByOnChainId(questId)
 
     // Record XP gain (triggers user_stats update)
     if (dbQuest) {

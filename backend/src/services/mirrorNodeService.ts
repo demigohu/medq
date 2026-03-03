@@ -1,5 +1,11 @@
 import { env } from "../config/env"
 import { getProtocolByAddress } from "../lib/protocols"
+import {
+  parseFullTxData,
+  matchQuestRequirements,
+  type VerificationParams,
+  type TxRecord,
+} from "./txDataParser"
 
 /**
  * Convert Hedera account ID (0.0.xxxxx) to EVM address (0x...).
@@ -76,15 +82,31 @@ interface ContractResult {
   }>
 }
 
+export interface VerifyOptions {
+  verificationParams?: VerificationParams | null
+  protocolCategory?: string
+}
+
 /**
- * Query Hedera Mirror Node untuk verifikasi transaction hash dari user
- * Mendukung format Hedera transaction ID (0.0.xxx-xxx-xxx) atau EVM tx hash (0x...)
+ * Query Hedera Mirror Node untuk verifikasi transaction hash dari user.
+ * Mendukung format Hedera transaction ID (0.0.xxx-xxx-xxx) atau EVM tx hash (0x...).
+ * Jika verificationParams diberikan, akan match full tx data (amount, token, action).
  */
 export async function verifyTransactionHash(
   txHashOrId: string,
   expectedFrom?: string,
-  expectedTo?: string
-): Promise<{ valid: boolean; transaction?: MirrorNodeTransaction; error?: string }> {
+  expectedTo?: string,
+  options?: VerifyOptions | null
+): Promise<{
+  valid: boolean
+  transaction?: MirrorNodeTransaction
+  fullTransactions?: MirrorNodeTransaction[]
+  parsedTxData?: ReturnType<typeof parseFullTxData>
+  error?: string
+}> {
+  const opts = options ?? {}
+  const verificationParams = opts.verificationParams ?? null
+  const protocolCategory = opts.protocolCategory ?? undefined
   try {
     const resolvedFrom = await resolveAccountId(expectedFrom)
     const resolvedTo = await resolveAccountId(expectedTo)
@@ -200,9 +222,38 @@ export async function verifyTransactionHash(
         }
       }
 
+      // Proof Verification v2: match full tx data against quest params
+      if (resolvedFrom && verificationParams) {
+        const parsed = parseFullTxData(
+          transactions as TxRecord[],
+          resolvedFrom
+        )
+        const questMatch = matchQuestRequirements(
+          parsed,
+          verificationParams,
+          protocolCategory
+        )
+        if (!questMatch.match) {
+          return {
+            valid: false,
+            error: questMatch.reason ?? "Quest requirements not met",
+            transaction,
+            fullTransactions: transactions as MirrorNodeTransaction[],
+            parsedTxData: parsed,
+          }
+        }
+      }
+
       return {
         valid: true,
         transaction,
+        fullTransactions: transactions as MirrorNodeTransaction[],
+        ...(resolvedFrom && {
+          parsedTxData: parseFullTxData(
+            transactions as TxRecord[],
+            resolvedFrom
+          ),
+        }),
       }
     } else {
       // Standard Hedera transaction ID format
@@ -267,9 +318,38 @@ export async function verifyTransactionHash(
         }
       }
 
+      // Proof Verification v2: match full tx data against quest params
+      if (resolvedFrom && verificationParams) {
+        const parsed = parseFullTxData(
+          transactions as TxRecord[],
+          resolvedFrom
+        )
+        const questMatch = matchQuestRequirements(
+          parsed,
+          verificationParams,
+          protocolCategory
+        )
+        if (!questMatch.match) {
+          return {
+            valid: false,
+            error: questMatch.reason ?? "Quest requirements not met",
+            transaction,
+            fullTransactions: transactions as MirrorNodeTransaction[],
+            parsedTxData: parsed,
+          }
+        }
+      }
+
       return {
         valid: true,
         transaction,
+        fullTransactions: transactions as MirrorNodeTransaction[],
+        ...(resolvedFrom && {
+          parsedTxData: parseFullTxData(
+            transactions as TxRecord[],
+            resolvedFrom
+          ),
+        }),
       }
     }
   } catch (error) {
@@ -319,7 +399,8 @@ export async function resolveAccountId(address?: string | null): Promise<string 
 export async function findMatchingTransactionHash(
   participant: string,
   expectedTo?: string,
-  sinceEpochSeconds?: number
+  sinceEpochSeconds?: number,
+  options?: VerifyOptions | null
 ): Promise<string | null> {
   const resolvedFrom = await resolveAccountId(participant)
   if (!resolvedFrom) return null
@@ -343,7 +424,12 @@ export async function findMatchingTransactionHash(
       const txId = tx.transaction_id
       if (!txId) continue
       console.log(`[AUTO-VERIFY] Checking tx ${txId}`)
-      const verified = await verifyTransactionHash(txId, participant, expectedTo)
+      const verified = await verifyTransactionHash(
+        txId,
+        participant,
+        expectedTo,
+        options
+      )
       if (verified.valid) {
         console.log(`[AUTO-VERIFY] Matched tx ${txId}`)
         return txId

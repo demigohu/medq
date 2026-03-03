@@ -5,9 +5,10 @@
    - Filter by accepted_at → expiry window
    - If match → auto `recordCompletion`
 
-2. **Proof Verification v2 (Log Decoding)**
-   - Decode protocol logs (swap/mint/borrow)
-   - Fallback to transfers if ABI mismatch
+2. **Proof Verification v2 (Full Tx Data)** ✓
+   - Parse full Mirror Node tx response (transfers, token_transfers)
+   - Match against quest verification_params (minAmountTinybars, tokenIds, actionType)
+   - Fallback to address-only verification if no params
 
 3. **Anti‑Replay (Global Tx Hash)**
    - Reject tx hash reused across quests

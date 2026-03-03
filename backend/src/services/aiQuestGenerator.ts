@@ -48,6 +48,14 @@ const questOutputSchema = z.object({
     evidenceHint: z.string(),
   }),
   metadataSnippet: z.string(),
+  verificationParams: z
+    .object({
+      minAmountTinybars: z.number().optional(),
+      minTokenAmount: z.number().optional(),
+      tokenIds: z.array(z.string()).optional(),
+      actionType: z.enum(["swap", "deposit", "borrow", "stake"]).optional(),
+    })
+    .optional(),
 })
 
 const parser = StructuredOutputParser.fromZodSchema(questOutputSchema)
@@ -64,7 +72,9 @@ Available protocols on Hedera Testnet:
 - SaucerSwap Finance (0x0000000000000000000000000000000000004b40): Decentralized exchange for token swaps. Website: https://testnet.saucerswap.finance/swap
 - Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending and borrowing protocol. Website: https://testnet.bonzo.finance/
 
-When generating quests, consider the specific protocol's features and make quests actionable and verifiable.`,
+When generating quests, consider the specific protocol's features and make quests actionable and verifiable.
+If the quest has a minimum amount (e.g. "swap at least 5 HBAR"), include verificationParams with minAmountTinybars (1 HBAR = 100000000 tinybars).
+Use actionType to match category: swap for DEX, deposit/borrow for lending.`,
   ],
   [
     "human",
@@ -147,7 +157,8 @@ export async function generateQuestWithGroq(rawInput: unknown) {
     participant: input.participant,
     extraNotes: input.extraNotes,
     metadataSnippet: questDraft.metadataSnippet,
-    banner: protocol.logo || undefined, // Include protocol logo as banner
+    banner: protocol.logo || undefined,
+    verificationParams: questDraft.verificationParams ?? undefined,
   }
 
   if (input.autoDeploy) {
