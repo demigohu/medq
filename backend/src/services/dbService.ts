@@ -10,9 +10,44 @@ export interface User {
   join_date: string
 }
 
+export interface Campaign {
+  id: string
+  partner_wallet: string
+  title: string
+  status: string
+  template_type: "swap" | "deposit" | "borrow" | "stake"
+  template_params: Record<string, unknown>
+  pool_token: string
+  pool_amount: string | number
+  max_participants: number
+  reward_per_quest_usdc: string | number
+  medq_per_quest?: number | null
+  escrow_address?: string | null
+  escrow_tx_hash?: string | null
+  participant_count: number
+  claimed_count: number
+  start_at?: string | null
+  end_at?: string | null
+  thumbnail?: string | null
+  description?: string | null
+  metadata_uri?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CampaignParticipant {
+  id: string
+  campaign_id: string
+  participant_wallet: string
+  quest_id_on_chain: number
+  usdc_released: boolean
+  created_at: string
+}
+
 export interface Quest {
   id: string
   quest_id_on_chain: number
+  campaign_id?: string | null
   agent_id?: number
   agent_controller?: string
   title: string
@@ -102,6 +137,7 @@ export async function getOrCreateUser(walletAddress: string): Promise<User> {
  */
 export async function saveQuest(questData: {
   quest_id_on_chain: number
+  campaign_id?: string | null
   agent_id?: number
   agent_controller?: string
   title: string
@@ -584,5 +620,193 @@ export async function logAIGeneration(logData: {
     console.error("Failed to log AI generation:", error)
     // Don't throw - logging failures shouldn't break the flow
   }
+}
+
+/**
+ * Campaign CRUD
+ */
+export async function createCampaign(campaign: {
+  partner_wallet: string
+  title: string
+  template_type: "swap" | "deposit" | "borrow" | "stake"
+  template_params: Record<string, unknown>
+  pool_token?: string
+  pool_amount: number
+  max_participants: number
+  start_at?: string
+  end_at?: string
+  thumbnail?: string
+  description?: string
+}): Promise<Campaign> {
+  const rewardPerQuestUsdc = campaign.pool_amount / campaign.max_participants
+  const startAt = campaign.start_at ?? null
+  const endAt = campaign.end_at ?? null
+  const { data, error } = await supabase
+    .from("campaigns")
+    .insert({
+      partner_wallet: campaign.partner_wallet.toLowerCase(),
+      title: campaign.title,
+      status: "pending",
+      template_type: campaign.template_type,
+      template_params: campaign.template_params,
+      pool_token: campaign.pool_token ?? "USDC",
+      pool_amount: campaign.pool_amount,
+      max_participants: campaign.max_participants,
+      reward_per_quest_usdc: rewardPerQuestUsdc,
+      start_at: startAt,
+      end_at: endAt,
+      thumbnail: campaign.thumbnail ?? null,
+      description: campaign.description ?? null,
+    })
+    .select()
+    .single()
+
+  if (error || !data) {
+    throw new Error(`Failed to create campaign: ${error?.message}`)
+  }
+  return data as Campaign
+}
+
+export async function getCampaignById(id: string): Promise<Campaign | null> {
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error || !data) return null
+  return data as Campaign
+}
+
+export async function listCampaigns(options?: {
+  status?: string
+  partner_wallet?: string
+  limit?: number
+}): Promise<Campaign[]> {
+  let query = supabase.from("campaigns").select("*").order("created_at", { ascending: false })
+  if (options?.status) query = query.eq("status", options.status)
+  if (options?.partner_wallet) query = query.eq("partner_wallet", options.partner_wallet.toLowerCase())
+  if (options?.limit) query = query.limit(options.limit)
+  const { data, error } = await query
+  if (error) return []
+  return (data ?? []) as Campaign[]
+}
+
+export async function updateCampaignStatus(
+  id: string,
+  status: string,
+  extra?: { escrow_address?: string; escrow_tx_hash?: string; medq_per_quest?: number }
+): Promise<void> {
+  const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
+  if (extra?.escrow_address) updates.escrow_address = extra.escrow_address
+  if (extra?.escrow_tx_hash) updates.escrow_tx_hash = extra.escrow_tx_hash
+  if (extra?.medq_per_quest != null) updates.medq_per_quest = extra.medq_per_quest
+  const { error } = await supabase.from("campaigns").update(updates).eq("id", id)
+  if (error) throw new Error(`Failed to update campaign: ${error.message}`)
+}
+
+export async function incrementCampaignParticipant(id: string): Promise<void> {
+  const camp = await getCampaignById(id)
+  if (!camp) throw new Error("Campaign not found")
+  const { error } = await supabase
+    .from("campaigns")
+    .update({
+      participant_count: camp.participant_count + 1,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+  if (error) throw new Error(`Failed to increment participant: ${error.message}`)
+}
+
+export async function addCampaignParticipant(
+  campaignId: string,
+  participantWallet: string,
+  questIdOnChain: number
+): Promise<CampaignParticipant> {
+  const { data, error } = await supabase
+    .from("campaign_participants")
+    .insert({
+      campaign_id: campaignId,
+      participant_wallet: participantWallet.toLowerCase(),
+      quest_id_on_chain: questIdOnChain,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(`Failed to add campaign participant: ${error.message}`)
+  return data as CampaignParticipant
+}
+
+export async function getCampaignParticipant(
+  campaignId: string,
+  participantWallet: string
+): Promise<CampaignParticipant | null> {
+  const { data, error } = await supabase
+    .from("campaign_participants")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .eq("participant_wallet", participantWallet.toLowerCase())
+    .single()
+
+  if (error || !data) return null
+  return data as CampaignParticipant
+}
+
+export async function getQuestByCampaignAndParticipant(
+  campaignId: string,
+  participantWallet: string
+): Promise<number | null> {
+  const cp = await getCampaignParticipant(campaignId, participantWallet)
+  return cp?.quest_id_on_chain ?? null
+}
+
+export async function getCampaignByQuestId(questIdOnChain: number): Promise<Campaign | null> {
+  const { data: quest } = await supabase
+    .from("quests")
+    .select("campaign_id")
+    .eq("quest_id_on_chain", questIdOnChain)
+    .single()
+  if (!quest?.campaign_id) return null
+  return getCampaignById(quest.campaign_id as string)
+}
+
+export async function getCampaignParticipantByQuestId(
+  questIdOnChain: number
+): Promise<CampaignParticipant | null> {
+  const { data, error } = await supabase
+    .from("campaign_participants")
+    .select("*")
+    .eq("quest_id_on_chain", questIdOnChain)
+    .single()
+  if (error || !data) return null
+  return data as CampaignParticipant
+}
+
+export async function incrementCampaignClaimed(id: string): Promise<void> {
+  const camp = await getCampaignById(id)
+  if (!camp) throw new Error("Campaign not found")
+  const newClaimed = camp.claimed_count + 1
+  const status = newClaimed >= camp.max_participants ? "completed" : camp.status
+  const { error } = await supabase
+    .from("campaigns")
+    .update({
+      claimed_count: newClaimed,
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+  if (error) throw new Error(`Failed to increment claimed: ${error.message}`)
+}
+
+export async function markCampaignParticipantUsdcReleased(
+  campaignId: string,
+  participantWallet: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("campaign_participants")
+    .update({ usdc_released: true })
+    .eq("campaign_id", campaignId)
+    .eq("participant_wallet", participantWallet.toLowerCase())
+  if (error) throw new Error(`Failed to mark USDC released: ${error.message}`)
 }
 

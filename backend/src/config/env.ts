@@ -26,6 +26,7 @@ const envSchema = z.object({
   MIRROR_NODE_URL: z.string().url().default("https://testnet.mirrornode.hedera.com/api/v1"),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10),
+  CAMPAIGN_ESCROW_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
 })
 
 export const env = envSchema.parse(process.env)

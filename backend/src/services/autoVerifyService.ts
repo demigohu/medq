@@ -2,6 +2,7 @@ import { env } from "../config/env"
 import { findMatchingTransactionHash } from "./mirrorNodeService"
 import { getParticipantProgress, recordCompletion } from "./questService"
 import { fetchQuestMetadataFromIpfs } from "./ipfsService"
+import { onCampaignQuestCompleted } from "./campaignCompletionService"
 import {
   getActiveQuestsForAutoVerify,
   isTransactionHashSubmitted,
@@ -144,6 +145,11 @@ export async function runAutoVerifyOnce() {
           completionResult.transactionHash
         )
       }
+
+      await onCampaignQuestCompleted(
+        Number(quest.quest_id_on_chain),
+        quest.assigned_participant
+      )
 
       console.log(`[AUTO-VERIFY] ✓ Completed quest ${quest.quest_id_on_chain}`)
     } catch (error: any) {

@@ -34,9 +34,10 @@
 10. **User Profiles v2**
    - Badge showcase + XP history + streaks
 
-11. **Quest Marketplace (Partner Publishing)**
-   - Dashboard + campaign flow
-   - Contract escrow (QuestMarketplace) if time allows
+11. **Quest Marketplace (Partner Publishing)** (partial ✓)
+   - Backend: campaign CRUD, join flow, AI generate, completion hook
+   - TODO: Dashboard + campaign flow (frontend)
+   - TODO: Contract escrow (CampaignEscrow USDC)
 
 12. **Pre‑seeded Demo Data**
    - 3 active quests + fast proof tx hash

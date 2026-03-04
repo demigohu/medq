@@ -2,6 +2,7 @@ import { Abi, createPublicClient, createWalletClient, defineChain, http } from "
 import { privateKeyToAccount } from "viem/accounts"
 
 import QuestManagerArtifact from "../../../contracts/out/QuestManager.sol/QuestManager.json"
+import CampaignEscrowArtifact from "../../../contracts/out/CampaignEscrow.sol/CampaignEscrow.json"
 import { env } from "../config/env"
 
 export const hederaTestnet = defineChain({
@@ -94,4 +95,7 @@ export function getWalletAddress() {
 export function getOracleAddress() {
   return oracleAccount.address
 }
+
+export const campaignEscrowAbi = CampaignEscrowArtifact.abi as Abi
+export const campaignEscrowAddress = env.CAMPAIGN_ESCROW_ADDRESS as `0x${string}` | undefined
 

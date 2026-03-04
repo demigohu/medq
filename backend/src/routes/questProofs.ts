@@ -4,6 +4,7 @@ import { z } from "zod"
 import { recordCompletion, getQuestById, getParticipantProgress } from "../services/questService"
 import { verifyTransactionHash } from "../services/mirrorNodeService"
 import { fetchQuestMetadataFromIpfs } from "../services/ipfsService"
+import { onCampaignQuestCompleted } from "../services/campaignCompletionService"
 import {
   isTransactionHashSubmitted,
   saveQuestSubmission,
@@ -152,6 +153,8 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
         completionResult.transactionHash
       )
     }
+
+    await onCampaignQuestCompleted(questId, participant)
 
     return res.json({
       message: "Quest completed successfully",
