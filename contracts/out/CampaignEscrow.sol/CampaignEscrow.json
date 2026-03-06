@@ -1,1 +1,694 @@
-{"abi":[{"type":"constructor","inputs":[{"name":"owner_","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},{"type":"function","name":"campaignBalance","inputs":[{"name":"campaignId","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"deposit","inputs":[{"name":"campaignId","type":"bytes32","internalType":"bytes32"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"releaseReward","inputs":[{"name":"campaignId","type":"bytes32","internalType":"bytes32"},{"name":"recipient","type":"address","internalType":"address"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"renounceOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"rewardReleaser","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"rewardToken","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract IERC20"}],"stateMutability":"view"},{"type":"function","name":"setRewardReleaser","inputs":[{"name":"releaser_","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setRewardToken","inputs":[{"name":"tokenAddress","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"Deposited","inputs":[{"name":"campaignId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"depositor","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"previousOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"Released","inputs":[{"name":"campaignId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"recipient","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"RewardReleaserUpdated","inputs":[{"name":"newReleaser","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"RewardTokenUpdated","inputs":[{"name":"newToken","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"error","name":"CampaignEscrow__HtsAssociationFailed","inputs":[{"name":"responseCode","type":"int32","internalType":"int32"}]},{"type":"error","name":"CampaignEscrow__InsufficientBalance","inputs":[{"name":"campaignId","type":"bytes32","internalType":"bytes32"},{"name":"requested","type":"uint256","internalType":"uint256"},{"name":"available","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"CampaignEscrow__InvalidReleaser","inputs":[]},{"type":"error","name":"CampaignEscrow__OnlyRewardReleaser","inputs":[]},{"type":"error","name":"CampaignEscrow__TokenNotConfigured","inputs":[]},{"type":"error","name":"CampaignEscrow__ZeroAmount","inputs":[]},{"type":"error","name":"OwnableInvalidOwner","inputs":[{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"OwnableUnauthorizedAccount","inputs":[{"name":"account","type":"address","internalType":"address"}]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]}],"bytecode":{"object":"0x60803460b857601f61079e38819003918201601f19168301916001600160401b0383118484101760bc5780849260209460405283398101031260b857516001600160a01b0381169081900360b857801560a5575f80546001600160a01b031981168317825560405192916001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a36106cd90816100d18239f35b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b634e487b7160e01b5f52604160045260245ffdfe6080806040526004361015610012575f80fd5b5f3560e01c9081630372da8e14610519575080631de26e161461044857806320bb7504146102dd5780632345a1d914610266578063715018a61461020f5780638aee81271461018c5780638da5cb5b14610165578063c78319721461013b578063f2fde38b146100b65763f7c618c11461008a575f80fd5b346100b2575f3660031901126100b2576002546040516001600160a01b039091168152602090f35b5f80fd5b346100b25760203660031901126100b2576100cf61053c565b6100d7610552565b6001600160a01b03168015610128575f80546001600160a01b03198116831782556001600160a01b0316907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a3005b631e4fbdf760e01b5f525f60045260245ffd5b346100b25760203660031901126100b2576004355f526003602052602060405f2054604051908152f35b346100b2575f3660031901126100b2575f546040516001600160a01b039091168152602090f35b346100b25760203660031901126100b2576101a561053c565b6101ad610552565b6001600160a01b03811690811561020057600280546001600160a01b031916831790556101fe917fa5289ba11778999f4dfb9415023783188d42bbb5db0612cbfbe55999069612a05f80a2306105ae565b005b630bc5794560e21b5f5260045ffd5b346100b2575f3660031901126100b257610227610552565b5f80546001600160a01b0319811682556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b346100b25760203660031901126100b25761027f61053c565b610287610552565b6001600160a01b031680156102ce57600180546001600160a01b031916821790557fce2efe89001b12d3e95c1ebeb5b725abb14a27489ee9dd9947b136fa55376c7a5f80a2005b632aa4bc8160e21b5f5260045ffd5b346100b25760603660031901126100b2576024356001600160a01b03811690600435908290036100b257600154604435906001600160a01b03163303610439576002546001600160a01b03161561020057801561042a57815f52600360205260405f2054808211610411578181039081116103fd57825f52600360205260405f205560018060a01b0360025416906040519163a9059cbb60e01b5f52846004528160245260205f60448180855af160015f51148116156103de575b83604052156103cc5750816020917fc8fa66dff4b9073528c3f1bf21a8dc9a18fdf09847e88e96188bc953aef519f09352a3005b635274afe760e01b5f5260045260245ffd5b60018115166103f457813b15153d151616610398565b833d5f823e3d90fd5b634e487b7160e01b5f52601160045260245ffd5b9163ddabf0f760e01b5f5260045260245260445260645ffd5b634ebaaac560e11b5f5260045ffd5b6338fb192360e01b5f5260045ffd5b346100b25760403660031901126100b2576002546001600160a01b0316600435602435821561020057801561042a57604051926323b872dd60e01b5f5233600452306024528160445260205f60648180855af160015f51148116156104fa575b846040525f606052156103cc5750815f52600360205260405f208054908282018092116103fd575582527f87d4c0b5e30d6808bc8a94ba1c4d839b29d664151551a31753387ee9ef48429b60203393a3005b600181151661051057813b15153d1516166104a8565b843d5f823e3d90fd5b346100b2575f3660031901126100b2576001546001600160a01b03168152602090f35b600435906001600160a01b03821682036100b257565b5f546001600160a01b0316330361056557565b63118cdaa760e01b5f523360045260245ffd5b90601f8019910116810190811067ffffffffffffffff82111761059a57604052565b634e487b7160e01b5f52604160045260245ffd5b60405163248a35ef60e11b602082019081526001600160a01b0392831660248301529290911660448083019190915281525f9182916105ee606482610578565b5190826101675af13d1561068f573d9067ffffffffffffffff821161059a5760405191610625601f8201601f191660200184610578565b82523d5f602084013e5b1561068c578051602081106106885781602091810103126100b257602001518060030b8091036100b25760168114158061067d575b61066b5750565b6305303aa160e31b5f5260045260245ffd5b5060c2811415610664565b5050565b50565b60609061062f56fea2646970667358221220260697184612356e66e5c7ff9b5e5cf54c376afcfcfa7e7f8501df8a3feb1ed064736f6c634300081e0033","sourceMap":"734:4745:54:-:0;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;1273:26:22;;1269:95;;-1:-1:-1;734:4745:54;;-1:-1:-1;;;;;;734:4745:54;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;3052:40:22;;-1:-1:-1;3052:40:22;734:4745:54;;;;;;;1269:95:22;1322:31;;;-1:-1:-1;1322:31:22;-1:-1:-1;1322:31:22;734:4745:54;;-1:-1:-1;1322:31:22;734:4745:54;-1:-1:-1;734:4745:54;;;;;;-1:-1:-1;734:4745:54;;;;;-1:-1:-1;734:4745:54","linkReferences":{}},"deployedBytecode":{"object":"0x6080806040526004361015610012575f80fd5b5f3560e01c9081630372da8e14610519575080631de26e161461044857806320bb7504146102dd5780632345a1d914610266578063715018a61461020f5780638aee81271461018c5780638da5cb5b14610165578063c78319721461013b578063f2fde38b146100b65763f7c618c11461008a575f80fd5b346100b2575f3660031901126100b2576002546040516001600160a01b039091168152602090f35b5f80fd5b346100b25760203660031901126100b2576100cf61053c565b6100d7610552565b6001600160a01b03168015610128575f80546001600160a01b03198116831782556001600160a01b0316907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a3005b631e4fbdf760e01b5f525f60045260245ffd5b346100b25760203660031901126100b2576004355f526003602052602060405f2054604051908152f35b346100b2575f3660031901126100b2575f546040516001600160a01b039091168152602090f35b346100b25760203660031901126100b2576101a561053c565b6101ad610552565b6001600160a01b03811690811561020057600280546001600160a01b031916831790556101fe917fa5289ba11778999f4dfb9415023783188d42bbb5db0612cbfbe55999069612a05f80a2306105ae565b005b630bc5794560e21b5f5260045ffd5b346100b2575f3660031901126100b257610227610552565b5f80546001600160a01b0319811682556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b346100b25760203660031901126100b25761027f61053c565b610287610552565b6001600160a01b031680156102ce57600180546001600160a01b031916821790557fce2efe89001b12d3e95c1ebeb5b725abb14a27489ee9dd9947b136fa55376c7a5f80a2005b632aa4bc8160e21b5f5260045ffd5b346100b25760603660031901126100b2576024356001600160a01b03811690600435908290036100b257600154604435906001600160a01b03163303610439576002546001600160a01b03161561020057801561042a57815f52600360205260405f2054808211610411578181039081116103fd57825f52600360205260405f205560018060a01b0360025416906040519163a9059cbb60e01b5f52846004528160245260205f60448180855af160015f51148116156103de575b83604052156103cc5750816020917fc8fa66dff4b9073528c3f1bf21a8dc9a18fdf09847e88e96188bc953aef519f09352a3005b635274afe760e01b5f5260045260245ffd5b60018115166103f457813b15153d151616610398565b833d5f823e3d90fd5b634e487b7160e01b5f52601160045260245ffd5b9163ddabf0f760e01b5f5260045260245260445260645ffd5b634ebaaac560e11b5f5260045ffd5b6338fb192360e01b5f5260045ffd5b346100b25760403660031901126100b2576002546001600160a01b0316600435602435821561020057801561042a57604051926323b872dd60e01b5f5233600452306024528160445260205f60648180855af160015f51148116156104fa575b846040525f606052156103cc5750815f52600360205260405f208054908282018092116103fd575582527f87d4c0b5e30d6808bc8a94ba1c4d839b29d664151551a31753387ee9ef48429b60203393a3005b600181151661051057813b15153d1516166104a8565b843d5f823e3d90fd5b346100b2575f3660031901126100b2576001546001600160a01b03168152602090f35b600435906001600160a01b03821682036100b257565b5f546001600160a01b0316330361056557565b63118cdaa760e01b5f523360045260245ffd5b90601f8019910116810190811067ffffffffffffffff82111761059a57604052565b634e487b7160e01b5f52604160045260245ffd5b60405163248a35ef60e11b602082019081526001600160a01b0392831660248301529290911660448083019190915281525f9182916105ee606482610578565b5190826101675af13d1561068f573d9067ffffffffffffffff821161059a5760405191610625601f8201601f191660200184610578565b82523d5f602084013e5b1561068c578051602081106106885781602091810103126100b257602001518060030b8091036100b25760168114158061067d575b61066b5750565b6305303aa160e31b5f5260045260245ffd5b5060c2811415610664565b5050565b50565b60609061062f56fea2646970667358221220260697184612356e66e5c7ff9b5e5cf54c376afcfcfa7e7f8501df8a3feb1ed064736f6c634300081e0033","sourceMap":"734:4745:54:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;981:25;734:4745;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;2627:22:22;;2623:91;;734:4745:54;;;-1:-1:-1;;;;;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;3052:40:22;;734:4745:54;3052:40:22;734:4745:54;2623:91:22;2672:31;;;734:4745:54;2672:31:22;734:4745:54;;;;;2672:31:22;734:4745:54;;;;;;-1:-1:-1;;734:4745:54;;;;;;;;5441:17;734:4745;;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;;;2626:26;;2622:75;;2707:34;734:4745;;-1:-1:-1;;;;;;734:4745:54;;;;;3009:12;;2756:32;-1:-1:-1;;2756:32:54;3002:4;3009:12;:::i;:::-;734:4745;2622:75;4120:36;;;734:4745;2661:36;734:4745;;2661:36;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;1500:62:22;;:::i;:::-;734:4745:54;;;-1:-1:-1;;;;;;734:4745:54;;;;-1:-1:-1;;;;;734:4745:54;3052:40:22;734:4745:54;;3052:40:22;734:4745:54;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;2386:23;;2382:69;;2461:26;734:4745;;-1:-1:-1;;;;;;734:4745:54;;;;;2502:32;-1:-1:-1;;2502:32:54;734:4745;2382:69;2418:33;;;734:4745;2418:33;734:4745;;2418:33;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;2158:10;:28;2154:77;;4841:11;734:4745;-1:-1:-1;;;;;734:4745:54;4833:34;4829:83;;4926:11;;4922:52;;734:4745;;;5005:17;734:4745;;;;;;5048:18;;;5044:122;;734:4745;;;;;;;;;;;5005:17;734:4745;;;;;;;;;;;4841:11;734:4745;;1306:37:33;734:4745:54;8544:1067:33;8509:24;;;;734:4745:54;8544:1067:33;;734:4745:54;8544:1067:33;;734:4745:54;8544:1067:33;734:4745:54;;;8544:1067:33;;;;;734:4745:54;;8544:1067:33;;;;;;;734:4745:54;8544:1067:33;734:4745:54;8544:1067:33;1305:38;1301:116;;734:4745:54;;;;5295:39;734:4745;;5295:39;734:4745;1301:116:33;1837:40;;;734:4745:54;1366:40:33;734:4745:54;;;;1366:40:33;8544:1067;734:4745:54;8544:1067:33;;;;;;;;;;;;;;;;;;734:4745:54;8544:1067:33;;;;;734:4745:54;;;;;;;;;;;;5044:122;5089:66;;;;734:4745;5089:66;734:4745;;;;;;;;5089:66;4922:52;4190:28;;;734:4745;4946:28;734:4745;;4946:28;2154:77;2195:36;;;734:4745;2195:36;734:4745;;2195:36;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;4085:11;734:4745;-1:-1:-1;;;;;734:4745:54;;;;;4077:34;;4073:83;;4170:11;;4166:52;;734:4745;10404:1148:33;10365:28;;;;734:4745:54;10404:1148:33;4258:10:54;734:4745;10404:1148:33;4278:4:54;734:4745;10404:1148:33;;;;734:4745:54;;10404:1148:33;;;;;;734:4745:54;;10404:1148:33;;;;;;;734:4745:54;10404:1148:33;734:4745:54;10404:1148:33;734:4745:54;10404:1148:33;;1766:48;1762:126;;734:4745:54;;;;4302:17;734:4745;;;;;;;;;;;;;;;;;;;4357:41;734:4745;4258:10;4357:41;;734:4745;10404:1148:33;734:4745:54;10404:1148:33;;;;;;;;;;;;;;;;;;734:4745:54;10404:1148:33;;;;;734:4745:54;;;;;;-1:-1:-1;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;:::o;1796:162:22:-;1710:6;734:4745:54;-1:-1:-1;;;;;734:4745:54;735:10:41;1855:23:22;1851:101;;1796:162::o;1851:101::-;1901:40;;;1710:6;1901:40;735:10:41;1901:40:22;734:4745:54;;1710:6:22;1901:40;1520:14:54;;;;;;;;;;;;;;;;;;;;;:::o;:::-;734:4745;;;-1:-1:-1;1520:14:54;;;;;-1:-1:-1;1520:14:54;3222:556;734:4745;;-1:-1:-1;;;3370:92:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;3370:92;;;734:4745;;;;;1520:14;;;;734:4745;;;;3370:92;;-1:-1:-1;;;;3370:92:54;;734:4745;3370:92;:::i;:::-;3350:113;;;1528:5;3350:113;;1520:14;;;;;;;;;;;734:4745;;;1520:14;;;;-1:-1:-1;;1520:14:54;3370:92;1520:14;734:4745;1520:14;:::i;:::-;;;;-1:-1:-1;3370:92:54;1520:14;;;;3477:8;3473:21;;1520:14;;3370:92;3547:18;;3543:31;;3596:27;3370:92;3596:27;;;1520:14;;;;3370:92;3596:27;1520:14;;;;;;;;;1618:2;3637:19;;;:59;;;1520:14;3633:139;;3222:556;:::o;3633:139::-;3719:42;;;-1:-1:-1;3719:42:54;3370:92;1749:3;3370:92;-1:-1:-1;3719:42:54;3637:59;3660:36;1749:3;3660:36;;;3637:59;;3543:31;3567:7;;:::o;3473:21::-;3487:7;:::o;1520:14::-;;;;","linkReferences":{}},"methodIdentifiers":{"campaignBalance(bytes32)":"c7831972","deposit(bytes32,uint256)":"1de26e16","owner()":"8da5cb5b","releaseReward(bytes32,address,uint256)":"20bb7504","renounceOwnership()":"715018a6","rewardReleaser()":"0372da8e","rewardToken()":"f7c618c1","setRewardReleaser(address)":"2345a1d9","setRewardToken(address)":"8aee8127","transferOwnership(address)":"f2fde38b"},"rawMetadata":"{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"int32\",\"name\":\"responseCode\",\"type\":\"int32\"}],\"name\":\"CampaignEscrow__HtsAssociationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"requested\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"available\",\"type\":\"uint256\"}],\"name\":\"CampaignEscrow__InsufficientBalance\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__InvalidReleaser\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__OnlyRewardReleaser\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__TokenNotConfigured\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__ZeroAmount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Released\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newReleaser\",\"type\":\"address\"}],\"name\":\"RewardReleaserUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newToken\",\"type\":\"address\"}],\"name\":\"RewardTokenUpdated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"}],\"name\":\"campaignBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"releaseReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardReleaser\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardToken\",\"outputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"releaser_\",\"type\":\"address\"}],\"name\":\"setRewardReleaser\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"name\":\"setRewardToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}],\"SafeERC20FailedOperation(address)\":[{\"details\":\"An operation with an ERC-20 token failed.\"}]},\"kind\":\"dev\",\"methods\":{\"deposit(bytes32,uint256)\":{\"params\":{\"amount\":\"Token amount (with token decimals)\",\"campaignId\":\"bytes32 - keccak256(abi.encodePacked(campaignUuid)) from backend\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"releaseReward(bytes32,address,uint256)\":{\"params\":{\"amount\":\"Token amount to release\",\"campaignId\":\"bytes32 - must match the campaign UUID hash used in deposit\",\"recipient\":\"Participant who completed the quest\"}},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"stateVariables\":{\"HTS_PRECOMPILE\":{\"details\":\"Hedera HTS precompile (HIP-206)\"},\"HTS_SUCCESS\":{\"details\":\"HederaResponseCodes.SUCCESS\"},\"HTS_TOKEN_ALREADY_ASSOCIATED\":{\"details\":\"HederaResponseCodes.TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT\"}},\"title\":\"CampaignEscrow\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"deposit(bytes32,uint256)\":{\"notice\":\"Partner deposits tokens for a campaign.\"},\"releaseReward(bytes32,address,uint256)\":{\"notice\":\"Release reward to quest completer. Called by backend oracle.\"},\"rewardReleaser()\":{\"notice\":\"Authorized address that can release rewards (backend oracle)\"},\"rewardToken()\":{\"notice\":\"Token used for campaign rewards (e.g. USDC)\"}},\"notice\":\"Holds partner-funded token rewards (e.g. USDC) for campaign quest completions.         Partner deposits, oracle releases to participants on quest completion.         On Hedera: HTS tokens (e.g. USDC) require token association before receive.         This contract auto-associates on setRewardToken. Participants must associate         the reward token with their account before receiving rewards.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/CampaignEscrow.sol\":\"CampaignEscrow\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@hashgraph/=lib/hedera-smart-contracts/\",\":@openzeppelin/=lib/openzeppelin-contracts/\",\":ds-test/=lib/hedera-smart-contracts/lib/forge-std/lib/ds-test/src/\",\":erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/\",\":forge-std/=lib/forge-std/src/\",\":halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/\",\":hardhat/=lib/hedera-smart-contracts/node_modules/hardhat/\",\":hedera-smart-contracts/=lib/hedera-smart-contracts/contracts/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\"],\"viaIR\":true},\"sources\":{\"lib/openzeppelin-contracts/contracts/access/Ownable.sol\":{\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6\",\"dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol\":{\"keccak256\":\"0xd5ea07362ab630a6a3dee4285a74cf2377044ca2e4be472755ad64d7c5d4b69d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://da5e832b40fc5c3145d3781e2e5fa60ac2052c9d08af7e300dc8ab80c4343100\",\"dweb:/ipfs/QmTzf7N5ZUdh5raqtzbM11yexiUoLC9z3Ws632MCuycq1d\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol\":{\"keccak256\":\"0x0afcb7e740d1537b252cb2676f600465ce6938398569f09ba1b9ca240dde2dfc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1c299900ac4ec268d4570ecef0d697a3013cd11a6eb74e295ee3fbc945056037\",\"dweb:/ipfs/Qmab9owJoxcA7vJT5XNayCMaUR1qxqj1NDzzisduwaJMcZ\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol\":{\"keccak256\":\"0x1a6221315ce0307746c2c4827c125d821ee796c74a676787762f4778671d4f44\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1bb2332a7ee26dd0b0de9b7fe266749f54820c99ab6a3bcb6f7e6b751d47ee2d\",\"dweb:/ipfs/QmcRWpaBeCYkhy68PR3B4AgD7asuQk7PwkWxrvJbZcikLF\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5282825a626cfe924e504274b864a652b0023591fa66f06a067b25b51ba9b303\",\"dweb:/ipfs/QmeCfPykghhMc81VJTrHTC7sF6CRvaA1FXVq2pJhwYp1dV\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol\":{\"keccak256\":\"0x304d732678032a9781ae85c8f204c8fba3d3a5e31c02616964e75cfdc5049098\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://299ced486011781dc98f638059678323c03079fefae1482abaa2135b22fa92d0\",\"dweb:/ipfs/QmbZNbcPTBxNvwChavN2kkZZs7xHhYL7mv51KrxMhsMs3j\"]},\"lib/openzeppelin-contracts/contracts/utils/Context.sol\":{\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12\",\"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617\",\"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u\"]},\"src/CampaignEscrow.sol\":{\"keccak256\":\"0x3d87e3fb6802d4043ac7551bec20fdb120f2b5e8b040be2c6a4800e4b272cb18\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://7dff7b0f7056607b1bef6fb66599906af5195d24098bea342a1d8c378f8f9dae\",\"dweb:/ipfs/QmYZzyKGMj5yx31nemiJ4d1LYoafN7r8SD3KcsJKK7h7M2\"]}},\"version\":1}","metadata":{"compiler":{"version":"0.8.30+commit.73712a01"},"language":"Solidity","output":{"abi":[{"inputs":[{"internalType":"address","name":"owner_","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"int32","name":"responseCode","type":"int32"}],"type":"error","name":"CampaignEscrow__HtsAssociationFailed"},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32"},{"internalType":"uint256","name":"requested","type":"uint256"},{"internalType":"uint256","name":"available","type":"uint256"}],"type":"error","name":"CampaignEscrow__InsufficientBalance"},{"inputs":[],"type":"error","name":"CampaignEscrow__InvalidReleaser"},{"inputs":[],"type":"error","name":"CampaignEscrow__OnlyRewardReleaser"},{"inputs":[],"type":"error","name":"CampaignEscrow__TokenNotConfigured"},{"inputs":[],"type":"error","name":"CampaignEscrow__ZeroAmount"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"type":"error","name":"OwnableInvalidOwner"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"type":"error","name":"OwnableUnauthorizedAccount"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"type":"error","name":"SafeERC20FailedOperation"},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32","indexed":true},{"internalType":"address","name":"depositor","type":"address","indexed":true},{"internalType":"uint256","name":"amount","type":"uint256","indexed":false}],"type":"event","name":"Deposited","anonymous":false},{"inputs":[{"internalType":"address","name":"previousOwner","type":"address","indexed":true},{"internalType":"address","name":"newOwner","type":"address","indexed":true}],"type":"event","name":"OwnershipTransferred","anonymous":false},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32","indexed":true},{"internalType":"address","name":"recipient","type":"address","indexed":true},{"internalType":"uint256","name":"amount","type":"uint256","indexed":false}],"type":"event","name":"Released","anonymous":false},{"inputs":[{"internalType":"address","name":"newReleaser","type":"address","indexed":true}],"type":"event","name":"RewardReleaserUpdated","anonymous":false},{"inputs":[{"internalType":"address","name":"newToken","type":"address","indexed":true}],"type":"event","name":"RewardTokenUpdated","anonymous":false},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32"}],"stateMutability":"view","type":"function","name":"campaignBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}]},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32"},{"internalType":"uint256","name":"amount","type":"uint256"}],"stateMutability":"nonpayable","type":"function","name":"deposit"},{"inputs":[],"stateMutability":"view","type":"function","name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}]},{"inputs":[{"internalType":"bytes32","name":"campaignId","type":"bytes32"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"stateMutability":"nonpayable","type":"function","name":"releaseReward"},{"inputs":[],"stateMutability":"nonpayable","type":"function","name":"renounceOwnership"},{"inputs":[],"stateMutability":"view","type":"function","name":"rewardReleaser","outputs":[{"internalType":"address","name":"","type":"address"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"rewardToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}]},{"inputs":[{"internalType":"address","name":"releaser_","type":"address"}],"stateMutability":"nonpayable","type":"function","name":"setRewardReleaser"},{"inputs":[{"internalType":"address","name":"tokenAddress","type":"address"}],"stateMutability":"nonpayable","type":"function","name":"setRewardToken"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"stateMutability":"nonpayable","type":"function","name":"transferOwnership"}],"devdoc":{"kind":"dev","methods":{"deposit(bytes32,uint256)":{"params":{"amount":"Token amount (with token decimals)","campaignId":"bytes32 - keccak256(abi.encodePacked(campaignUuid)) from backend"}},"owner()":{"details":"Returns the address of the current owner."},"releaseReward(bytes32,address,uint256)":{"params":{"amount":"Token amount to release","campaignId":"bytes32 - must match the campaign UUID hash used in deposit","recipient":"Participant who completed the quest"}},"renounceOwnership()":{"details":"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."},"transferOwnership(address)":{"details":"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."}},"version":1},"userdoc":{"kind":"user","methods":{"deposit(bytes32,uint256)":{"notice":"Partner deposits tokens for a campaign."},"releaseReward(bytes32,address,uint256)":{"notice":"Release reward to quest completer. Called by backend oracle."},"rewardReleaser()":{"notice":"Authorized address that can release rewards (backend oracle)"},"rewardToken()":{"notice":"Token used for campaign rewards (e.g. USDC)"}},"version":1}},"settings":{"remappings":["@hashgraph/=lib/hedera-smart-contracts/","@openzeppelin/=lib/openzeppelin-contracts/","ds-test/=lib/hedera-smart-contracts/lib/forge-std/lib/ds-test/src/","erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/","forge-std/=lib/forge-std/src/","halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/","hardhat/=lib/hedera-smart-contracts/node_modules/hardhat/","hedera-smart-contracts/=lib/hedera-smart-contracts/contracts/","openzeppelin-contracts/=lib/openzeppelin-contracts/"],"optimizer":{"enabled":true,"runs":200},"metadata":{"bytecodeHash":"ipfs"},"compilationTarget":{"src/CampaignEscrow.sol":"CampaignEscrow"},"evmVersion":"prague","libraries":{},"viaIR":true},"sources":{"lib/openzeppelin-contracts/contracts/access/Ownable.sol":{"keccak256":"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb","urls":["bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6","dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol":{"keccak256":"0xd5ea07362ab630a6a3dee4285a74cf2377044ca2e4be472755ad64d7c5d4b69d","urls":["bzz-raw://da5e832b40fc5c3145d3781e2e5fa60ac2052c9d08af7e300dc8ab80c4343100","dweb:/ipfs/QmTzf7N5ZUdh5raqtzbM11yexiUoLC9z3Ws632MCuycq1d"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol":{"keccak256":"0x0afcb7e740d1537b252cb2676f600465ce6938398569f09ba1b9ca240dde2dfc","urls":["bzz-raw://1c299900ac4ec268d4570ecef0d697a3013cd11a6eb74e295ee3fbc945056037","dweb:/ipfs/Qmab9owJoxcA7vJT5XNayCMaUR1qxqj1NDzzisduwaJMcZ"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol":{"keccak256":"0x1a6221315ce0307746c2c4827c125d821ee796c74a676787762f4778671d4f44","urls":["bzz-raw://1bb2332a7ee26dd0b0de9b7fe266749f54820c99ab6a3bcb6f7e6b751d47ee2d","dweb:/ipfs/QmcRWpaBeCYkhy68PR3B4AgD7asuQk7PwkWxrvJbZcikLF"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol":{"keccak256":"0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2","urls":["bzz-raw://5282825a626cfe924e504274b864a652b0023591fa66f06a067b25b51ba9b303","dweb:/ipfs/QmeCfPykghhMc81VJTrHTC7sF6CRvaA1FXVq2pJhwYp1dV"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol":{"keccak256":"0x304d732678032a9781ae85c8f204c8fba3d3a5e31c02616964e75cfdc5049098","urls":["bzz-raw://299ced486011781dc98f638059678323c03079fefae1482abaa2135b22fa92d0","dweb:/ipfs/QmbZNbcPTBxNvwChavN2kkZZs7xHhYL7mv51KrxMhsMs3j"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/utils/Context.sol":{"keccak256":"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2","urls":["bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12","dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol":{"keccak256":"0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c","urls":["bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617","dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"],"license":"MIT"},"src/CampaignEscrow.sol":{"keccak256":"0x3d87e3fb6802d4043ac7551bec20fdb120f2b5e8b040be2c6a4800e4b272cb18","urls":["bzz-raw://7dff7b0f7056607b1bef6fb66599906af5195d24098bea342a1d8c378f8f9dae","dweb:/ipfs/QmYZzyKGMj5yx31nemiJ4d1LYoafN7r8SD3KcsJKK7h7M2"],"license":"MIT"}},"version":1},"id":54}
+{
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        { "name": "owner_", "type": "address", "internalType": "address" }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "campaignBalance",
+      "inputs": [
+        { "name": "campaignId", "type": "bytes32", "internalType": "bytes32" }
+      ],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "deposit",
+      "inputs": [
+        { "name": "campaignId", "type": "bytes32", "internalType": "bytes32" },
+        { "name": "amount", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "releaseReward",
+      "inputs": [
+        { "name": "campaignId", "type": "bytes32", "internalType": "bytes32" },
+        { "name": "recipient", "type": "address", "internalType": "address" },
+        { "name": "amount", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "rewardReleaser",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "rewardToken",
+      "inputs": [],
+      "outputs": [
+        { "name": "", "type": "address", "internalType": "contract IERC20" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setRewardReleaser",
+      "inputs": [
+        { "name": "releaser_", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setRewardToken",
+      "inputs": [
+        { "name": "tokenAddress", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        { "name": "newOwner", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "Deposited",
+      "inputs": [
+        {
+          "name": "campaignId",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "depositor",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Released",
+      "inputs": [
+        {
+          "name": "campaignId",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RewardReleaserUpdated",
+      "inputs": [
+        {
+          "name": "newReleaser",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RewardTokenUpdated",
+      "inputs": [
+        {
+          "name": "newToken",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "CampaignEscrow__HtsAssociationFailed",
+      "inputs": [
+        { "name": "responseCode", "type": "int32", "internalType": "int32" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "CampaignEscrow__InsufficientBalance",
+      "inputs": [
+        { "name": "campaignId", "type": "bytes32", "internalType": "bytes32" },
+        { "name": "requested", "type": "uint256", "internalType": "uint256" },
+        { "name": "available", "type": "uint256", "internalType": "uint256" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "CampaignEscrow__InvalidReleaser",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CampaignEscrow__OnlyRewardReleaser",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CampaignEscrow__TokenNotConfigured",
+      "inputs": []
+    },
+    { "type": "error", "name": "CampaignEscrow__ZeroAmount", "inputs": [] },
+    {
+      "type": "error",
+      "name": "OwnableInvalidOwner",
+      "inputs": [
+        { "name": "owner", "type": "address", "internalType": "address" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "OwnableUnauthorizedAccount",
+      "inputs": [
+        { "name": "account", "type": "address", "internalType": "address" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SafeERC20FailedOperation",
+      "inputs": [
+        { "name": "token", "type": "address", "internalType": "address" }
+      ]
+    }
+  ],
+  "bytecode": {
+    "object": "0x60803460b857601f61079e38819003918201601f19168301916001600160401b0383118484101760bc5780849260209460405283398101031260b857516001600160a01b0381169081900360b857801560a5575f80546001600160a01b031981168317825560405192916001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a36106cd90816100d18239f35b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b634e487b7160e01b5f52604160045260245ffdfe6080806040526004361015610012575f80fd5b5f3560e01c9081630372da8e14610519575080631de26e161461044857806320bb7504146102dd5780632345a1d914610266578063715018a61461020f5780638aee81271461018c5780638da5cb5b14610165578063c78319721461013b578063f2fde38b146100b65763f7c618c11461008a575f80fd5b346100b2575f3660031901126100b2576002546040516001600160a01b039091168152602090f35b5f80fd5b346100b25760203660031901126100b2576100cf61053c565b6100d7610552565b6001600160a01b03168015610128575f80546001600160a01b03198116831782556001600160a01b0316907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a3005b631e4fbdf760e01b5f525f60045260245ffd5b346100b25760203660031901126100b2576004355f526003602052602060405f2054604051908152f35b346100b2575f3660031901126100b2575f546040516001600160a01b039091168152602090f35b346100b25760203660031901126100b2576101a561053c565b6101ad610552565b6001600160a01b03811690811561020057600280546001600160a01b031916831790556101fe917fa5289ba11778999f4dfb9415023783188d42bbb5db0612cbfbe55999069612a05f80a2306105ae565b005b630bc5794560e21b5f5260045ffd5b346100b2575f3660031901126100b257610227610552565b5f80546001600160a01b0319811682556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b346100b25760203660031901126100b25761027f61053c565b610287610552565b6001600160a01b031680156102ce57600180546001600160a01b031916821790557fce2efe89001b12d3e95c1ebeb5b725abb14a27489ee9dd9947b136fa55376c7a5f80a2005b632aa4bc8160e21b5f5260045ffd5b346100b25760603660031901126100b2576024356001600160a01b03811690600435908290036100b257600154604435906001600160a01b03163303610439576002546001600160a01b03161561020057801561042a57815f52600360205260405f2054808211610411578181039081116103fd57825f52600360205260405f205560018060a01b0360025416906040519163a9059cbb60e01b5f52846004528160245260205f60448180855af160015f51148116156103de575b83604052156103cc5750816020917fc8fa66dff4b9073528c3f1bf21a8dc9a18fdf09847e88e96188bc953aef519f09352a3005b635274afe760e01b5f5260045260245ffd5b60018115166103f457813b15153d151616610398565b833d5f823e3d90fd5b634e487b7160e01b5f52601160045260245ffd5b9163ddabf0f760e01b5f5260045260245260445260645ffd5b634ebaaac560e11b5f5260045ffd5b6338fb192360e01b5f5260045ffd5b346100b25760403660031901126100b2576002546001600160a01b0316600435602435821561020057801561042a57604051926323b872dd60e01b5f5233600452306024528160445260205f60648180855af160015f51148116156104fa575b846040525f606052156103cc5750815f52600360205260405f208054908282018092116103fd575582527f87d4c0b5e30d6808bc8a94ba1c4d839b29d664151551a31753387ee9ef48429b60203393a3005b600181151661051057813b15153d1516166104a8565b843d5f823e3d90fd5b346100b2575f3660031901126100b2576001546001600160a01b03168152602090f35b600435906001600160a01b03821682036100b257565b5f546001600160a01b0316330361056557565b63118cdaa760e01b5f523360045260245ffd5b90601f8019910116810190811067ffffffffffffffff82111761059a57604052565b634e487b7160e01b5f52604160045260245ffd5b60405163248a35ef60e11b602082019081526001600160a01b0392831660248301529290911660448083019190915281525f9182916105ee606482610578565b5190826101675af13d1561068f573d9067ffffffffffffffff821161059a5760405191610625601f8201601f191660200184610578565b82523d5f602084013e5b1561068c578051602081106106885781602091810103126100b257602001518060030b8091036100b25760168114158061067d575b61066b5750565b6305303aa160e31b5f5260045260245ffd5b5060c2811415610664565b5050565b50565b60609061062f56fea2646970667358221220260697184612356e66e5c7ff9b5e5cf54c376afcfcfa7e7f8501df8a3feb1ed064736f6c634300081e0033",
+    "sourceMap": "734:4745:54:-:0;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;1273:26:22;;1269:95;;-1:-1:-1;734:4745:54;;-1:-1:-1;;;;;;734:4745:54;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;3052:40:22;;-1:-1:-1;3052:40:22;734:4745:54;;;;;;;1269:95:22;1322:31;;;-1:-1:-1;1322:31:22;-1:-1:-1;1322:31:22;734:4745:54;;-1:-1:-1;1322:31:22;734:4745:54;-1:-1:-1;734:4745:54;;;;;;-1:-1:-1;734:4745:54;;;;;-1:-1:-1;734:4745:54",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x6080806040526004361015610012575f80fd5b5f3560e01c9081630372da8e14610519575080631de26e161461044857806320bb7504146102dd5780632345a1d914610266578063715018a61461020f5780638aee81271461018c5780638da5cb5b14610165578063c78319721461013b578063f2fde38b146100b65763f7c618c11461008a575f80fd5b346100b2575f3660031901126100b2576002546040516001600160a01b039091168152602090f35b5f80fd5b346100b25760203660031901126100b2576100cf61053c565b6100d7610552565b6001600160a01b03168015610128575f80546001600160a01b03198116831782556001600160a01b0316907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09080a3005b631e4fbdf760e01b5f525f60045260245ffd5b346100b25760203660031901126100b2576004355f526003602052602060405f2054604051908152f35b346100b2575f3660031901126100b2575f546040516001600160a01b039091168152602090f35b346100b25760203660031901126100b2576101a561053c565b6101ad610552565b6001600160a01b03811690811561020057600280546001600160a01b031916831790556101fe917fa5289ba11778999f4dfb9415023783188d42bbb5db0612cbfbe55999069612a05f80a2306105ae565b005b630bc5794560e21b5f5260045ffd5b346100b2575f3660031901126100b257610227610552565b5f80546001600160a01b0319811682556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b346100b25760203660031901126100b25761027f61053c565b610287610552565b6001600160a01b031680156102ce57600180546001600160a01b031916821790557fce2efe89001b12d3e95c1ebeb5b725abb14a27489ee9dd9947b136fa55376c7a5f80a2005b632aa4bc8160e21b5f5260045ffd5b346100b25760603660031901126100b2576024356001600160a01b03811690600435908290036100b257600154604435906001600160a01b03163303610439576002546001600160a01b03161561020057801561042a57815f52600360205260405f2054808211610411578181039081116103fd57825f52600360205260405f205560018060a01b0360025416906040519163a9059cbb60e01b5f52846004528160245260205f60448180855af160015f51148116156103de575b83604052156103cc5750816020917fc8fa66dff4b9073528c3f1bf21a8dc9a18fdf09847e88e96188bc953aef519f09352a3005b635274afe760e01b5f5260045260245ffd5b60018115166103f457813b15153d151616610398565b833d5f823e3d90fd5b634e487b7160e01b5f52601160045260245ffd5b9163ddabf0f760e01b5f5260045260245260445260645ffd5b634ebaaac560e11b5f5260045ffd5b6338fb192360e01b5f5260045ffd5b346100b25760403660031901126100b2576002546001600160a01b0316600435602435821561020057801561042a57604051926323b872dd60e01b5f5233600452306024528160445260205f60648180855af160015f51148116156104fa575b846040525f606052156103cc5750815f52600360205260405f208054908282018092116103fd575582527f87d4c0b5e30d6808bc8a94ba1c4d839b29d664151551a31753387ee9ef48429b60203393a3005b600181151661051057813b15153d1516166104a8565b843d5f823e3d90fd5b346100b2575f3660031901126100b2576001546001600160a01b03168152602090f35b600435906001600160a01b03821682036100b257565b5f546001600160a01b0316330361056557565b63118cdaa760e01b5f523360045260245ffd5b90601f8019910116810190811067ffffffffffffffff82111761059a57604052565b634e487b7160e01b5f52604160045260245ffd5b60405163248a35ef60e11b602082019081526001600160a01b0392831660248301529290911660448083019190915281525f9182916105ee606482610578565b5190826101675af13d1561068f573d9067ffffffffffffffff821161059a5760405191610625601f8201601f191660200184610578565b82523d5f602084013e5b1561068c578051602081106106885781602091810103126100b257602001518060030b8091036100b25760168114158061067d575b61066b5750565b6305303aa160e31b5f5260045260245ffd5b5060c2811415610664565b5050565b50565b60609061062f56fea2646970667358221220260697184612356e66e5c7ff9b5e5cf54c376afcfcfa7e7f8501df8a3feb1ed064736f6c634300081e0033",
+    "sourceMap": "734:4745:54:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;981:25;734:4745;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;2627:22:22;;2623:91;;734:4745:54;;;-1:-1:-1;;;;;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;3052:40:22;;734:4745:54;3052:40:22;734:4745:54;2623:91:22;2672:31;;;734:4745:54;2672:31:22;734:4745:54;;;;;2672:31:22;734:4745:54;;;;;;-1:-1:-1;;734:4745:54;;;;;;;;5441:17;734:4745;;;;;;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;;;2626:26;;2622:75;;2707:34;734:4745;;-1:-1:-1;;;;;;734:4745:54;;;;;3009:12;;2756:32;-1:-1:-1;;2756:32:54;3002:4;3009:12;:::i;:::-;734:4745;2622:75;4120:36;;;734:4745;2661:36;734:4745;;2661:36;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;1500:62:22;;:::i;:::-;734:4745:54;;;-1:-1:-1;;;;;;734:4745:54;;;;-1:-1:-1;;;;;734:4745:54;3052:40:22;734:4745:54;;3052:40:22;734:4745:54;;;;;;;-1:-1:-1;;734:4745:54;;;;;;:::i;:::-;1500:62:22;;:::i;:::-;-1:-1:-1;;;;;734:4745:54;2386:23;;2382:69;;2461:26;734:4745;;-1:-1:-1;;;;;;734:4745:54;;;;;2502:32;-1:-1:-1;;2502:32:54;734:4745;2382:69;2418:33;;;734:4745;2418:33;734:4745;;2418:33;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;2158:10;:28;2154:77;;4841:11;734:4745;-1:-1:-1;;;;;734:4745:54;4833:34;4829:83;;4926:11;;4922:52;;734:4745;;;5005:17;734:4745;;;;;;5048:18;;;5044:122;;734:4745;;;;;;;;;;;5005:17;734:4745;;;;;;;;;;;4841:11;734:4745;;1306:37:33;734:4745:54;8544:1067:33;8509:24;;;;734:4745:54;8544:1067:33;;734:4745:54;8544:1067:33;;734:4745:54;8544:1067:33;734:4745:54;;;8544:1067:33;;;;;734:4745:54;;8544:1067:33;;;;;;;734:4745:54;8544:1067:33;734:4745:54;8544:1067:33;1305:38;1301:116;;734:4745:54;;;;5295:39;734:4745;;5295:39;734:4745;1301:116:33;1837:40;;;734:4745:54;1366:40:33;734:4745:54;;;;1366:40:33;8544:1067;734:4745:54;8544:1067:33;;;;;;;;;;;;;;;;;;734:4745:54;8544:1067:33;;;;;734:4745:54;;;;;;;;;;;;5044:122;5089:66;;;;734:4745;5089:66;734:4745;;;;;;;;5089:66;4922:52;4190:28;;;734:4745;4946:28;734:4745;;4946:28;2154:77;2195:36;;;734:4745;2195:36;734:4745;;2195:36;734:4745;;;;;;-1:-1:-1;;734:4745:54;;;;4085:11;734:4745;-1:-1:-1;;;;;734:4745:54;;;;;4077:34;;4073:83;;4170:11;;4166:52;;734:4745;10404:1148:33;10365:28;;;;734:4745:54;10404:1148:33;4258:10:54;734:4745;10404:1148:33;4278:4:54;734:4745;10404:1148:33;;;;734:4745:54;;10404:1148:33;;;;;;734:4745:54;;10404:1148:33;;;;;;;734:4745:54;10404:1148:33;734:4745:54;10404:1148:33;734:4745:54;10404:1148:33;;1766:48;1762:126;;734:4745:54;;;;4302:17;734:4745;;;;;;;;;;;;;;;;;;;4357:41;734:4745;4258:10;4357:41;;734:4745;10404:1148:33;734:4745:54;10404:1148:33;;;;;;;;;;;;;;;;;;734:4745:54;10404:1148:33;;;;;734:4745:54;;;;;;-1:-1:-1;;734:4745:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;;;;;-1:-1:-1;;;;;734:4745:54;;;;;;:::o;1796:162:22:-;1710:6;734:4745:54;-1:-1:-1;;;;;734:4745:54;735:10:41;1855:23:22;1851:101;;1796:162::o;1851:101::-;1901:40;;;1710:6;1901:40;735:10:41;1901:40:22;734:4745:54;;1710:6:22;1901:40;1520:14:54;;;;;;;;;;;;;;;;;;;;;:::o;:::-;734:4745;;;-1:-1:-1;1520:14:54;;;;;-1:-1:-1;1520:14:54;3222:556;734:4745;;-1:-1:-1;;;3370:92:54;;;;;;-1:-1:-1;;;;;734:4745:54;;;3370:92;;;734:4745;;;;;1520:14;;;;734:4745;;;;3370:92;;-1:-1:-1;;;;3370:92:54;;734:4745;3370:92;:::i;:::-;3350:113;;;1528:5;3350:113;;1520:14;;;;;;;;;;;734:4745;;;1520:14;;;;-1:-1:-1;;1520:14:54;3370:92;1520:14;734:4745;1520:14;:::i;:::-;;;;-1:-1:-1;3370:92:54;1520:14;;;;3477:8;3473:21;;1520:14;;3370:92;3547:18;;3543:31;;3596:27;3370:92;3596:27;;;1520:14;;;;3370:92;3596:27;1520:14;;;;;;;;;1618:2;3637:19;;;:59;;;1520:14;3633:139;;3222:556;:::o;3633:139::-;3719:42;;;-1:-1:-1;3719:42:54;3370:92;1749:3;3370:92;-1:-1:-1;3719:42:54;3637:59;3660:36;1749:3;3660:36;;;3637:59;;3543:31;3567:7;;:::o;3473:21::-;3487:7;:::o;1520:14::-;;;;",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "campaignBalance(bytes32)": "c7831972",
+    "deposit(bytes32,uint256)": "1de26e16",
+    "owner()": "8da5cb5b",
+    "releaseReward(bytes32,address,uint256)": "20bb7504",
+    "renounceOwnership()": "715018a6",
+    "rewardReleaser()": "0372da8e",
+    "rewardToken()": "f7c618c1",
+    "setRewardReleaser(address)": "2345a1d9",
+    "setRewardToken(address)": "8aee8127",
+    "transferOwnership(address)": "f2fde38b"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"int32\",\"name\":\"responseCode\",\"type\":\"int32\"}],\"name\":\"CampaignEscrow__HtsAssociationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"requested\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"available\",\"type\":\"uint256\"}],\"name\":\"CampaignEscrow__InsufficientBalance\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__InvalidReleaser\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__OnlyRewardReleaser\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__TokenNotConfigured\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CampaignEscrow__ZeroAmount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Released\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newReleaser\",\"type\":\"address\"}],\"name\":\"RewardReleaserUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newToken\",\"type\":\"address\"}],\"name\":\"RewardTokenUpdated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"}],\"name\":\"campaignBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"campaignId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"releaseReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardReleaser\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardToken\",\"outputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"releaser_\",\"type\":\"address\"}],\"name\":\"setRewardReleaser\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"name\":\"setRewardToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}],\"SafeERC20FailedOperation(address)\":[{\"details\":\"An operation with an ERC-20 token failed.\"}]},\"kind\":\"dev\",\"methods\":{\"deposit(bytes32,uint256)\":{\"params\":{\"amount\":\"Token amount (with token decimals)\",\"campaignId\":\"bytes32 - keccak256(abi.encodePacked(campaignUuid)) from backend\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"releaseReward(bytes32,address,uint256)\":{\"params\":{\"amount\":\"Token amount to release\",\"campaignId\":\"bytes32 - must match the campaign UUID hash used in deposit\",\"recipient\":\"Participant who completed the quest\"}},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"stateVariables\":{\"HTS_PRECOMPILE\":{\"details\":\"Hedera HTS precompile (HIP-206)\"},\"HTS_SUCCESS\":{\"details\":\"HederaResponseCodes.SUCCESS\"},\"HTS_TOKEN_ALREADY_ASSOCIATED\":{\"details\":\"HederaResponseCodes.TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT\"}},\"title\":\"CampaignEscrow\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"deposit(bytes32,uint256)\":{\"notice\":\"Partner deposits tokens for a campaign.\"},\"releaseReward(bytes32,address,uint256)\":{\"notice\":\"Release reward to quest completer. Called by backend oracle.\"},\"rewardReleaser()\":{\"notice\":\"Authorized address that can release rewards (backend oracle)\"},\"rewardToken()\":{\"notice\":\"Token used for campaign rewards (e.g. USDC)\"}},\"notice\":\"Holds partner-funded token rewards (e.g. USDC) for campaign quest completions.         Partner deposits, oracle releases to participants on quest completion.         On Hedera: HTS tokens (e.g. USDC) require token association before receive.         This contract auto-associates on setRewardToken. Participants must associate         the reward token with their account before receiving rewards.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/CampaignEscrow.sol\":\"CampaignEscrow\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@hashgraph/=lib/hedera-smart-contracts/\",\":@openzeppelin/=lib/openzeppelin-contracts/\",\":ds-test/=lib/hedera-smart-contracts/lib/forge-std/lib/ds-test/src/\",\":erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/\",\":forge-std/=lib/forge-std/src/\",\":halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/\",\":hardhat/=lib/hedera-smart-contracts/node_modules/hardhat/\",\":hedera-smart-contracts/=lib/hedera-smart-contracts/contracts/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\"],\"viaIR\":true},\"sources\":{\"lib/openzeppelin-contracts/contracts/access/Ownable.sol\":{\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6\",\"dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol\":{\"keccak256\":\"0xd5ea07362ab630a6a3dee4285a74cf2377044ca2e4be472755ad64d7c5d4b69d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://da5e832b40fc5c3145d3781e2e5fa60ac2052c9d08af7e300dc8ab80c4343100\",\"dweb:/ipfs/QmTzf7N5ZUdh5raqtzbM11yexiUoLC9z3Ws632MCuycq1d\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol\":{\"keccak256\":\"0x0afcb7e740d1537b252cb2676f600465ce6938398569f09ba1b9ca240dde2dfc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1c299900ac4ec268d4570ecef0d697a3013cd11a6eb74e295ee3fbc945056037\",\"dweb:/ipfs/Qmab9owJoxcA7vJT5XNayCMaUR1qxqj1NDzzisduwaJMcZ\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol\":{\"keccak256\":\"0x1a6221315ce0307746c2c4827c125d821ee796c74a676787762f4778671d4f44\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1bb2332a7ee26dd0b0de9b7fe266749f54820c99ab6a3bcb6f7e6b751d47ee2d\",\"dweb:/ipfs/QmcRWpaBeCYkhy68PR3B4AgD7asuQk7PwkWxrvJbZcikLF\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5282825a626cfe924e504274b864a652b0023591fa66f06a067b25b51ba9b303\",\"dweb:/ipfs/QmeCfPykghhMc81VJTrHTC7sF6CRvaA1FXVq2pJhwYp1dV\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol\":{\"keccak256\":\"0x304d732678032a9781ae85c8f204c8fba3d3a5e31c02616964e75cfdc5049098\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://299ced486011781dc98f638059678323c03079fefae1482abaa2135b22fa92d0\",\"dweb:/ipfs/QmbZNbcPTBxNvwChavN2kkZZs7xHhYL7mv51KrxMhsMs3j\"]},\"lib/openzeppelin-contracts/contracts/utils/Context.sol\":{\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12\",\"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617\",\"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u\"]},\"src/CampaignEscrow.sol\":{\"keccak256\":\"0x3d87e3fb6802d4043ac7551bec20fdb120f2b5e8b040be2c6a4800e4b272cb18\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://7dff7b0f7056607b1bef6fb66599906af5195d24098bea342a1d8c378f8f9dae\",\"dweb:/ipfs/QmYZzyKGMj5yx31nemiJ4d1LYoafN7r8SD3KcsJKK7h7M2\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": { "version": "0.8.30+commit.73712a01" },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            { "internalType": "address", "name": "owner_", "type": "address" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [
+            { "internalType": "int32", "name": "responseCode", "type": "int32" }
+          ],
+          "type": "error",
+          "name": "CampaignEscrow__HtsAssociationFailed"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "requested",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "available",
+              "type": "uint256"
+            }
+          ],
+          "type": "error",
+          "name": "CampaignEscrow__InsufficientBalance"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "CampaignEscrow__InvalidReleaser"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "CampaignEscrow__OnlyRewardReleaser"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "CampaignEscrow__TokenNotConfigured"
+        },
+        { "inputs": [], "type": "error", "name": "CampaignEscrow__ZeroAmount" },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "owner", "type": "address" }
+          ],
+          "type": "error",
+          "name": "OwnableInvalidOwner"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "account", "type": "address" }
+          ],
+          "type": "error",
+          "name": "OwnableUnauthorizedAccount"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "token", "type": "address" }
+          ],
+          "type": "error",
+          "name": "SafeERC20FailedOperation"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "depositor",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "Deposited",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "previousOwner",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "newOwner",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "OwnershipTransferred",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "Released",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "newReleaser",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RewardReleaserUpdated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "newToken",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RewardTokenUpdated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "campaignBalance",
+          "outputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32"
+            },
+            { "internalType": "uint256", "name": "amount", "type": "uint256" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "deposit"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "owner",
+          "outputs": [
+            { "internalType": "address", "name": "", "type": "address" }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "campaignId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address"
+            },
+            { "internalType": "uint256", "name": "amount", "type": "uint256" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "releaseReward"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "renounceOwnership"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "rewardReleaser",
+          "outputs": [
+            { "internalType": "address", "name": "", "type": "address" }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "rewardToken",
+          "outputs": [
+            { "internalType": "contract IERC20", "name": "", "type": "address" }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "releaser_",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setRewardReleaser"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "tokenAddress",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setRewardToken"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "newOwner", "type": "address" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "transferOwnership"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "deposit(bytes32,uint256)": {
+            "params": {
+              "amount": "Token amount (with token decimals)",
+              "campaignId": "bytes32 - keccak256(abi.encodePacked(campaignUuid)) from backend"
+            }
+          },
+          "owner()": { "details": "Returns the address of the current owner." },
+          "releaseReward(bytes32,address,uint256)": {
+            "params": {
+              "amount": "Token amount to release",
+              "campaignId": "bytes32 - must match the campaign UUID hash used in deposit",
+              "recipient": "Participant who completed the quest"
+            }
+          },
+          "renounceOwnership()": {
+            "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."
+          },
+          "transferOwnership(address)": {
+            "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "deposit(bytes32,uint256)": {
+            "notice": "Partner deposits tokens for a campaign."
+          },
+          "releaseReward(bytes32,address,uint256)": {
+            "notice": "Release reward to quest completer. Called by backend oracle."
+          },
+          "rewardReleaser()": {
+            "notice": "Authorized address that can release rewards (backend oracle)"
+          },
+          "rewardToken()": {
+            "notice": "Token used for campaign rewards (e.g. USDC)"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@hashgraph/=lib/hedera-smart-contracts/",
+        "@openzeppelin/=lib/openzeppelin-contracts/",
+        "ds-test/=lib/hedera-smart-contracts/lib/forge-std/lib/ds-test/src/",
+        "erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/",
+        "forge-std/=lib/forge-std/src/",
+        "halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/",
+        "hardhat/=lib/hedera-smart-contracts/node_modules/hardhat/",
+        "hedera-smart-contracts/=lib/hedera-smart-contracts/contracts/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/"
+      ],
+      "optimizer": { "enabled": true, "runs": 200 },
+      "metadata": { "bytecodeHash": "ipfs" },
+      "compilationTarget": { "src/CampaignEscrow.sol": "CampaignEscrow" },
+      "evmVersion": "prague",
+      "libraries": {},
+      "viaIR": true
+    },
+    "sources": {
+      "lib/openzeppelin-contracts/contracts/access/Ownable.sol": {
+        "keccak256": "0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb",
+        "urls": [
+          "bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6",
+          "dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol": {
+        "keccak256": "0xd5ea07362ab630a6a3dee4285a74cf2377044ca2e4be472755ad64d7c5d4b69d",
+        "urls": [
+          "bzz-raw://da5e832b40fc5c3145d3781e2e5fa60ac2052c9d08af7e300dc8ab80c4343100",
+          "dweb:/ipfs/QmTzf7N5ZUdh5raqtzbM11yexiUoLC9z3Ws632MCuycq1d"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol": {
+        "keccak256": "0x0afcb7e740d1537b252cb2676f600465ce6938398569f09ba1b9ca240dde2dfc",
+        "urls": [
+          "bzz-raw://1c299900ac4ec268d4570ecef0d697a3013cd11a6eb74e295ee3fbc945056037",
+          "dweb:/ipfs/Qmab9owJoxcA7vJT5XNayCMaUR1qxqj1NDzzisduwaJMcZ"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol": {
+        "keccak256": "0x1a6221315ce0307746c2c4827c125d821ee796c74a676787762f4778671d4f44",
+        "urls": [
+          "bzz-raw://1bb2332a7ee26dd0b0de9b7fe266749f54820c99ab6a3bcb6f7e6b751d47ee2d",
+          "dweb:/ipfs/QmcRWpaBeCYkhy68PR3B4AgD7asuQk7PwkWxrvJbZcikLF"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol": {
+        "keccak256": "0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2",
+        "urls": [
+          "bzz-raw://5282825a626cfe924e504274b864a652b0023591fa66f06a067b25b51ba9b303",
+          "dweb:/ipfs/QmeCfPykghhMc81VJTrHTC7sF6CRvaA1FXVq2pJhwYp1dV"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol": {
+        "keccak256": "0x304d732678032a9781ae85c8f204c8fba3d3a5e31c02616964e75cfdc5049098",
+        "urls": [
+          "bzz-raw://299ced486011781dc98f638059678323c03079fefae1482abaa2135b22fa92d0",
+          "dweb:/ipfs/QmbZNbcPTBxNvwChavN2kkZZs7xHhYL7mv51KrxMhsMs3j"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/Context.sol": {
+        "keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+        "urls": [
+          "bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+          "dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+        "urls": [
+          "bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+          "dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+        ],
+        "license": "MIT"
+      },
+      "src/CampaignEscrow.sol": {
+        "keccak256": "0x3d87e3fb6802d4043ac7551bec20fdb120f2b5e8b040be2c6a4800e4b272cb18",
+        "urls": [
+          "bzz-raw://7dff7b0f7056607b1bef6fb66599906af5195d24098bea342a1d8c378f8f9dae",
+          "dweb:/ipfs/QmYZzyKGMj5yx31nemiJ4d1LYoafN7r8SD3KcsJKK7h7M2"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "id": 54
+}

@@ -1,8 +1,8 @@
 import { Abi, createPublicClient, createWalletClient, defineChain, http } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 
-import QuestManagerArtifact from "../../../contracts/out/QuestManager.sol/QuestManager.json"
-import CampaignEscrowArtifact from "../../../contracts/out/CampaignEscrow.sol/CampaignEscrow.json"
+import QuestManagerArtifact from "../abi/QuestManager.json"
+import CampaignEscrowArtifact from "../abi/CampaignEscrow.json"
 import { env } from "../config/env"
 
 export const hederaTestnet = defineChain({

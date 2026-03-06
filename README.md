@@ -94,38 +94,18 @@ graph LR
 
 ---
 
-## 📂 Repository Structure
+## 📂 Repository Structure (Turborepo Monorepo)
 ```
 .
-├── backend/                     # Express + Supabase + Groq AI backend
-│   ├── src/                     # routes, services, cron jobs, lib
-│   ├── database/                # Supabase schema & helpers
-│   ├── env.example              # backend env template
-│   ├── package.json
-│   └── README.md
-├── contracts/                   # Foundry workspace (QuestManager, RewardVault, BadgeNFT)
-│   ├── src/                     # Solidity sources
-│   ├── script/                  # Deploy scripts (Deploy.s.sol)
-│   ├── test/                    # Foundry tests
-│   ├── lib/                     # git submodules (hedera-smart-contracts, OZ, forge-std)
-│   ├── foundry.toml
-│   └── README.md
-├── src/                         # Next.js 16 application code
-│   ├── app/                     # App Router routes
-│   ├── components/              # UI + shared components
-│   ├── data/                    # mock data + constants
-│   ├── hooks/                   # client hooks (wagmi, quests, etc.)
-│   └── lib/                     # API client, store, contract helpers
-├── public/                      # Static assets (favicons, future architecture diagram)
-├── components.json              # shadcn/ui config
-├── next-env.d.ts                # Next.js type definitions
-├── next.config.ts               # Next.js configuration
-├── package.json                 # frontend scripts & deps (root)
-├── package-lock.json
-├── postcss.config.mjs
-├── tsconfig.json
-├── REOWN_SETUP.md               # Wallet setup steps
-└── README.md                    # 
+├── apps/
+│   ├── web/                     # Frontend v2 (medq-v2 redesign)
+│   ├── web-v1/                  # Frontend v1 (original Next.js app)
+│   └── api/                     # Express + Supabase + Groq AI backend
+├── contracts/                   # Foundry (QuestManager, RewardVault, BadgeNFT)
+├── package.json                 # workspace root + turbo scripts
+├── pnpm-workspace.yaml
+├── turbo.json
+└── README.md
 ```
 
 ---
@@ -163,24 +143,21 @@ graph LR
 
 5. **Install dependencies**
    ```bash
-   #frontend
-   npm install
-
-   #backend
-   cd backend && npm install
+   pnpm install
    ```
 
 6. **Run services**
    ```bash
-   # backend API
-   cd backend
-   npm run dev
+   # backend API (port 4000)
+   pnpm dev:api
 
-   # frontend (in another terminal)
-   cd ../
-   npm run dev
+   # frontend v1 (port 3000)
+   pnpm dev:v1
+
+   # frontend v2 (port 3001)
+   pnpm dev:v2
    ```
-   Frontend runs on `http://localhost:3000`, backend on `http://localhost:4000`. Wagmi/Reown automatically prompts Hedera Testnet (chain id 296).
+   Or run all: `pnpm dev`. Wagmi/Reown prompts Hedera Testnet (chain id 296).
 
 ---
 
