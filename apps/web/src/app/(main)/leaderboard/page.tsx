@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import {
     Table,
     TableBody,
@@ -43,7 +45,20 @@ type LeaderRow = {
     trendPct?: number;
 };
 
-const LEADERBOARD_ROWS: LeaderRow[] = [
+function mapApiToLeaderRow(entry: { rank: number; name?: string; wallet_address: string; level: number; total_xp: number; avatar_url?: string }, idx: number): LeaderRow {
+    const shortAddr = `${entry.wallet_address.slice(0, 6)}...${entry.wallet_address.slice(-4)}`;
+    return {
+        rank: entry.rank ?? idx + 1,
+        name: entry.name || `User ${shortAddr}`,
+        handle: shortAddr,
+        avatarSrc: entry.avatar_url || "/images/dummy-img-1.png",
+        level: entry.level,
+        xp: entry.total_xp,
+        distribution: { defi: 50, social: 30, nft: 20 },
+    };
+}
+
+const FALLBACK_LEADERBOARD: LeaderRow[] = [
     {
         rank: 1,
         name: "HederaMaster",
@@ -145,7 +160,7 @@ const LEADERBOARD_META = {
     activeQuesters: 24812,
     seasonRewardsPool: 125000,
     seasonRewardsUnit: "USDT",
-} as const;
+};
 
 function formatNumber(n: number) {
     return Intl.NumberFormat("en").format(n);
@@ -238,12 +253,11 @@ function OrbitProfile({
         <div>
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded p-2 text-center">
                 <div className="relative h-10 w-10 overflow-hidden rounded">
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                         src={row.avatarSrc}
                         alt={row.name}
-                        fill
                         className="object-cover w-full h-full"
-                    // sizes="40px"
                     />
                 </div>
                 <div className="space-y-0.5">
@@ -259,11 +273,11 @@ function OrbitProfile({
     );
 }
 
-function HallOfFameOrbit() {
+function HallOfFameOrbit({ rows }: { rows: LeaderRow[] }) {
     const isMobile = useIsMobile();
-    const first = LEADERBOARD_ROWS.find((r) => r.rank === 1)!;
-    const orbiters1 = LEADERBOARD_ROWS.filter((r) => r.rank >= 2 && r.rank <= 3);
-    const orbiters2 = LEADERBOARD_ROWS.filter((r) => r.rank >= 4 && r.rank <= 5);
+    const first = rows.find((r) => r.rank === 1) ?? rows[0];
+    const orbiters1 = rows.filter((r) => r.rank >= 2 && r.rank <= 3);
+    const orbiters2 = rows.filter((r) => r.rank >= 4 && r.rank <= 5);
 
     return (
         <section className="relative overflow-hidden rounded border border-[#1A1A1A] bg-black px-6 py-10">
@@ -301,12 +315,11 @@ function HallOfFameOrbit() {
                         <div className="mb-3 flex flex-col items-center">
                             <div className="relative overflow-hidden p-2 flex flex-col items-center justify-center">
                                 <div className="relative h-16 w-16 overflow-hidden rounded">
-                                    <Image
-                                        src={first.avatarSrc}
-                                        alt={first.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="64px"
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={first?.avatarSrc ?? "/images/dummy-img-1.png"}
+                                        alt={first?.name ?? "Rank 1"}
+                                        className="object-cover w-full h-full"
                                     />
                                 </div>
                                 <div className="mt-2 text-center">
@@ -314,7 +327,7 @@ function HallOfFameOrbit() {
                                         Rank #1
                                     </div>
                                     <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white">
-                                        {first.name}
+                                        {first?.name ?? "—"}
                                     </div>
                                 </div>
                             </div>
@@ -359,7 +372,7 @@ function QuestDistributionBar({
     );
 }
 
-function LeaderboardTable() {
+function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
     return (
         <div className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
             <Table className="w-full">
@@ -387,7 +400,7 @@ function LeaderboardTable() {
                 </TableHeader>
 
                 <TableBody>
-                    {LEADERBOARD_ROWS.map((row) => (
+                    {rows.map((row) => (
                         <TableRow
                             key={row.rank}
                             className={cn(
@@ -409,12 +422,11 @@ function LeaderboardTable() {
                             <TableCell className="px-5 py-4 align-middle">
                                 <div className="flex items-center gap-3">
                                     <div className="relative h-10 w-10 overflow-hidden rounded border border-white/10 bg-zinc-900">
-                                        <Image
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
                                             src={row.avatarSrc}
                                             alt={row.name}
-                                            fill
-                                            className="object-cover"
-                                            sizes="40px"
+                                            className="object-cover w-full h-full"
                                         />
                                     </div>
                                     <div className="min-w-0">
@@ -583,11 +595,19 @@ function CurrentUserRow() {
 }
 
 export default function LeaderboardPage() {
+    const { leaderboard, loading } = useLeaderboard(100);
+    const leaderboardRows = useMemo(() => {
+        if (leaderboard.length > 0) {
+            return leaderboard.map((e, i) => mapApiToLeaderRow(e, i));
+        }
+        return FALLBACK_LEADERBOARD;
+    }, [leaderboard]);
+
     return (
         <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
             <div className="mx-auto w-full space-y-6">
                 <TopStatsStrip />
-                <HallOfFameOrbit />
+                <HallOfFameOrbit rows={leaderboardRows} />
 
                 <section className="space-y-3">
                     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -603,7 +623,7 @@ export default function LeaderboardPage() {
 
                     <CurrentUserRow />
 
-                    <LeaderboardTable />
+                    <LeaderboardTable rows={leaderboardRows} />
                 </section>
             </div>
         </main>

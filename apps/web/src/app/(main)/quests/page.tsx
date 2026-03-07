@@ -1,8 +1,35 @@
-import Image from "next/image";
+"use client";
+
 import PartnershipCarousel from "@/components/partnership-carousel";
 import { Button } from "@/components/ui/button";
 import { MoveRight } from "lucide-react";
 import Link from "next/link";
+import { useAllQuests, useUserQuests } from "@/hooks/useQuests";
+import { useWallet } from "@/hooks/useWallet";
+
+const CATEGORY_STYLE: Record<string, { code: string; codeBg: string; codeText: string; bonusDot: string }> = {
+  swap: { code: "SW", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-sky-400" },
+  liquidity: { code: "LP", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-emerald-400" },
+  stake: { code: "ST", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-indigo-400" },
+  lend: { code: "L", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-sky-400" },
+};
+
+function mapQuestToCard(q: Record<string, unknown>, idx: number) {
+  const cat = String(q.category || "swap").toLowerCase();
+  const style = CATEGORY_STYLE[cat] || CATEGORY_STYLE.swap;
+  const reward = q.reward_per_participant ? `${Number(q.reward_per_participant)} MEDQ` : "— MEDQ";
+  return {
+    id: String(q.quest_id_on_chain ?? q.id ?? idx),
+    code: style.code,
+    codeBg: style.codeBg,
+    codeText: style.codeText,
+    title: String(q.title || "Quest"),
+    description: String(q.description || ""),
+    reward,
+    bonusDot: style.bonusDot,
+    bonusLabel: "Badge NFT",
+  };
+}
 
 const PARTNERSHIP_QUESTS = [
     {
@@ -33,85 +60,35 @@ const PARTNERSHIP_QUESTS = [
     },
 ] as const;
 
-const DAILY_QUESTS = [
-    {
-        id: "daily-quest-1",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-    {
-        id: "daily-quest-2",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-    {
-        id: "daily-quest-3",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-    {
-        id: "daily-quest-4",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-] as const;
-
-const WEEKLY_QUESTS = [
-    {
-        id: "weekly-quest-1",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-    {
-        id: "weekly-quest-2",
-        code: "LP",
-        codeBg: "bg-sky-500/15",
-        codeText: "text-sky-400",
-        title: "Liquidity Provision Quest",
-        description:
-            "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
-        reward: "500 MEDQ",
-        bonusDot: "bg-emerald-400",
-        bonusLabel: "Limited NFT",
-    },
-] as const;
+const FALLBACK_QUEST = {
+    id: "0",
+    code: "LP",
+    codeBg: "bg-sky-500/15",
+    codeText: "text-sky-400",
+    title: "No quests available",
+    description: "Connect your wallet or check back later for new quests.",
+    reward: "— MEDQ",
+    bonusDot: "bg-emerald-400",
+    bonusLabel: "Badge NFT",
+};
 
 export default function QuestsPage() {
+    const { address, isConnected } = useWallet();
+    const { quests: userQuests } = useUserQuests(isConnected ? address : null);
+    const { quests: allQuests } = useAllQuests(isConnected ? address : null);
+
+    const dailyQuests = userQuests?.daily
+        ? [mapQuestToCard(userQuests.daily as Record<string, unknown>, 0)]
+        : allQuests.length > 0
+            ? allQuests.slice(0, 4).map((q, i) => mapQuestToCard(q, i))
+            : [FALLBACK_QUEST];
+
+    const weeklyQuests = userQuests?.weekly
+        ? [mapQuestToCard(userQuests.weekly as Record<string, unknown>, 0)]
+        : allQuests.length > 4
+            ? allQuests.slice(4, 6).map((q, i) => mapQuestToCard(q, i + 4))
+            : allQuests.slice(0, 2).map((q, i) => mapQuestToCard(q, i));
+
     return (
         <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
             <div className="space-y-12">
@@ -134,7 +111,7 @@ export default function QuestsPage() {
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-4">
-                        {DAILY_QUESTS.map((quest) => (
+                        {dailyQuests.map((quest) => (
                             <div
                                 key={quest.id}
                                 className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"
@@ -214,7 +191,7 @@ export default function QuestsPage() {
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
-                        {WEEKLY_QUESTS.map((quest) => (
+                        {weeklyQuests.map((quest) => (
                             <div
                                 key={quest.id}
                                 className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAllQuests } from "@/hooks/useQuests";
 import Dither from "@/components/ui/Dither";
 import FaultyTerminal from "@/components/ui/FaultyTerminal";
 import {
@@ -22,15 +23,38 @@ import { TypeAnimation } from "react-type-animation";
 //   ssr: false,
 // });
 
-const ACTIVE_CAMPAIGNS = [
+const CATEGORY_STYLE: Record<string, { code: string; codeBg: string; codeText: string; bonusDot: string }> = {
+  swap: { code: "SW", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-sky-400" },
+  liquidity: { code: "LP", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-emerald-400" },
+  stake: { code: "ST", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-indigo-400" },
+  lend: { code: "L", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-sky-400" },
+};
+
+function mapQuestToCard(q: Record<string, unknown>, idx: number) {
+  const cat = (String(q.category || "swap")).toLowerCase();
+  const style = CATEGORY_STYLE[cat] || CATEGORY_STYLE.swap;
+  const reward = q.reward_per_participant ? `${Number(q.reward_per_participant)} MEDQ` : "— MEDQ";
+  return {
+    id: String(q.quest_id_on_chain ?? q.id ?? idx),
+    code: style.code,
+    codeBg: style.codeBg,
+    codeText: style.codeText,
+    title: String(q.title || "Quest"),
+    description: String(q.description || ""),
+    reward,
+    bonusDot: style.bonusDot,
+    bonusLabel: "Badge NFT",
+  };
+}
+
+const FALLBACK_CAMPAIGNS = [
   {
     id: "#0004",
     code: "LP",
     codeBg: "bg-sky-500/15",
     codeText: "text-sky-400",
     title: "Liquidity Provision Quest",
-    description:
-      "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
+    description: "Provide liquidity to the HBAR/SAUCE pool for 7 days to earn rewards.",
     reward: "500 MEDQ",
     bonusDot: "bg-emerald-400",
     bonusLabel: "Limited NFT",
@@ -95,33 +119,14 @@ const ACTIVE_CAMPAIGNS = [
     bonusDot: "bg-emerald-300",
     bonusLabel: "SentX NFT",
   },
-  {
-    id: "#0100",
-    code: "D",
-    codeBg: "bg-purple-500/15",
-    codeText: "text-purple-300",
-    title: "DEX Master Trader",
-    description:
-      "Complete 5 trades with a total volume of $100+ on any supported DEX.",
-    reward: "600 MEDQ",
-    bonusDot: "bg-purple-300",
-    bonusLabel: "Trader NFT",
-  },
-  {
-    id: "#0101",
-    code: "NFT",
-    codeBg: "bg-emerald-500/15",
-    codeText: "text-emerald-300",
-    title: "NFT Collector Quest",
-    description:
-      "Purchase or mint any NFT from a verified collection on SentX.",
-    reward: "450 MEDQ",
-    bonusDot: "bg-emerald-300",
-    bonusLabel: "SentX NFT",
-  },
-] as const;
+];
 
 export default function Home() {
+  const { quests, loading } = useAllQuests();
+  const activeCampaigns = quests.length > 0
+    ? quests.slice(0, 8).map((q, i) => mapQuestToCard(q, i))
+    : FALLBACK_CAMPAIGNS;
+
   return (
     <main className="min-h-screen bg-black text-white">
       {/* Hero */}
@@ -326,7 +331,7 @@ export default function Home() {
 
             {/* Cards grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4">
-              {ACTIVE_CAMPAIGNS.map((campaign) => (
+              {activeCampaigns.map((campaign) => (
                 <div
                   key={campaign.id}
                   className="flex h-full flex-col justify-between p-10 border-r border-b border-[#1A1A1A]"
@@ -375,9 +380,11 @@ export default function Home() {
                   {/* <button className="mt-5 inline-flex h-9 w-full items-center justify-center rounded-full bg-white text-[11px] font-semibold tracking-[0.16em] text-black hover:bg-zinc-200">
                     JOIN QUEST &rarr;
                   </button> */}
-                  <Button variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
-                    Join Quest
-                    <MoveRight className="w-4 h-4" />
+                  <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
+                    <Link href={`/quests/${campaign.id}`}>
+                      Join Quest
+                      <MoveRight className="w-4 h-4" />
+                    </Link>
                   </Button>
                 </div>
               ))}
