@@ -1,7 +1,38 @@
 import { generateQuestWithGroq } from "./aiQuestGenerator"
-import { saveQuest, getQuestByOnChainId, getOrCreateUser } from "./dbService"
+import {
+  saveQuest,
+  getQuestByOnChainId,
+  getOrCreateUser,
+  getExpiredDailyWeeklyQuests,
+  markQuestExpired,
+} from "./dbService"
 import { env } from "../config/env"
 import { PROTOCOLS } from "../lib/protocols"
+
+const QUEST_GENERATION_RETRY_COUNT = 3
+const QUEST_GENERATION_RETRY_DELAY_MS = 2000
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: { maxAttempts?: number; delayMs?: number; label?: string } = {}
+): Promise<T> {
+  const maxAttempts = opts.maxAttempts ?? QUEST_GENERATION_RETRY_COUNT
+  const delayMs = opts.delayMs ?? QUEST_GENERATION_RETRY_DELAY_MS
+  const label = opts.label ?? "operation"
+  let lastError: Error | null = null
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (error: any) {
+      lastError = error
+      if (attempt < maxAttempts) {
+        console.warn(`[Retry] ${label} failed (attempt ${attempt}/${maxAttempts}):`, error.message)
+        await new Promise((r) => setTimeout(r, delayMs))
+      }
+    }
+  }
+  throw lastError
+}
 
 /**
  * Generate daily quest for user
@@ -188,13 +219,16 @@ export async function generateInitialQuests(walletAddress: string) {
   // Generate daily quest only if doesn't exist
   if (!existingQuests.daily) {
     try {
-      const dailyResult = await generateDailyQuest(walletAddress)
+      const dailyResult = await withRetry(
+        () => generateDailyQuest(walletAddress),
+        { label: `daily quest for ${walletAddress.slice(0, 8)}...` }
+      )
       results.daily = {
         questId: dailyResult.questId,
         transactionHash: dailyResult.transactionHash,
       }
     } catch (error: any) {
-      console.error("Failed to generate daily quest:", error)
+      console.error("Failed to generate daily quest (after retries):", error)
       results.errors = { ...results.errors, daily: error.message }
     }
   } else {
@@ -208,13 +242,16 @@ export async function generateInitialQuests(walletAddress: string) {
   // Generate weekly quest only if doesn't exist
   if (!existingQuests.weekly) {
     try {
-      const weeklyResult = await generateWeeklyQuest(walletAddress)
+      const weeklyResult = await withRetry(
+        () => generateWeeklyQuest(walletAddress),
+        { label: `weekly quest for ${walletAddress.slice(0, 8)}...` }
+      )
       results.weekly = {
         questId: weeklyResult.questId,
         transactionHash: weeklyResult.transactionHash,
       }
     } catch (error: any) {
-      console.error("Failed to generate weekly quest:", error)
+      console.error("Failed to generate weekly quest (after retries):", error)
       results.errors = { ...results.errors, weekly: error.message }
     }
   } else {
@@ -226,6 +263,68 @@ export async function generateInitialQuests(walletAddress: string) {
   }
 
   return results
+}
+
+/**
+ * Process expired daily/weekly quests — triggered by expiry, not by schedule.
+ * For each expired quest: mark as expired, then generate a new one for that user.
+ * Call this from a periodic job; the "trigger" is the expired state, not the clock.
+ */
+export async function processExpiredQuests(): Promise<{
+  processed: number
+  daily: { success: number; failed: number }
+  weekly: { success: number; failed: number }
+}> {
+  const expiredQuests = await getExpiredDailyWeeklyQuests()
+  if (expiredQuests.length === 0) {
+    return { processed: 0, daily: { success: 0, failed: 0 }, weekly: { success: 0, failed: 0 } }
+  }
+
+  const stats = { processed: 0, daily: { success: 0, failed: 0 }, weekly: { success: 0, failed: 0 } }
+
+  // Group by wallet + quest_type (one expired daily and one expired weekly per user max)
+  const byUser = new Map<string, { daily?: (typeof expiredQuests)[0]; weekly?: (typeof expiredQuests)[0] }>()
+  for (const q of expiredQuests) {
+    const wallet = (q.assigned_participant || "").toLowerCase()
+    if (!wallet) continue
+    const entry = byUser.get(wallet) || {}
+    if (q.quest_type === "daily") entry.daily = q
+    else if (q.quest_type === "weekly") entry.weekly = q
+    byUser.set(wallet, entry)
+  }
+
+  for (const [walletAddress, entry] of byUser) {
+    if (entry.daily) {
+      try {
+        await withRetry(
+          () => generateDailyQuest(walletAddress),
+          { label: `daily for ${walletAddress.slice(0, 8)}...` }
+        )
+        await markQuestExpired(entry.daily.quest_id_on_chain)
+        stats.daily.success++
+        stats.processed++
+      } catch (error: any) {
+        console.error(`[processExpiredQuests] Failed daily for ${walletAddress} (after retries):`, error.message)
+        stats.daily.failed++
+      }
+    }
+    if (entry.weekly) {
+      try {
+        await withRetry(
+          () => generateWeeklyQuest(walletAddress),
+          { label: `weekly for ${walletAddress.slice(0, 8)}...` }
+        )
+        await markQuestExpired(entry.weekly.quest_id_on_chain)
+        stats.weekly.success++
+        stats.processed++
+      } catch (error: any) {
+        console.error(`[processExpiredQuests] Failed weekly for ${walletAddress} (after retries):`, error.message)
+        stats.weekly.failed++
+      }
+    }
+  }
+
+  return stats
 }
 
 /**

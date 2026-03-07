@@ -238,6 +238,43 @@ export async function setQuestAcceptedAt(
 }
 
 /**
+ * Get expired daily/weekly quests (for expiry-driven regeneration)
+ * Returns quests that are active, daily or weekly type, and past expiry_timestamp
+ */
+export async function getExpiredDailyWeeklyQuests(): Promise<Quest[]> {
+  const now = Math.floor(Date.now() / 1000)
+  const { data, error } = await supabase
+    .from("quests")
+    .select("*")
+    .eq("status", "active")
+    .in("quest_type", ["daily", "weekly"])
+    .lt("expiry_timestamp", now)
+
+  if (error) {
+    throw new Error(`Failed to get expired quests: ${error.message}`)
+  }
+
+  return (data || []) as Quest[]
+}
+
+/**
+ * Mark quest as expired by quest_id_on_chain
+ */
+export async function markQuestExpired(questIdOnChain: number): Promise<void> {
+  const { error } = await supabase
+    .from("quests")
+    .update({
+      status: "expired",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("quest_id_on_chain", questIdOnChain)
+
+  if (error) {
+    throw new Error(`Failed to mark quest expired: ${error.message}`)
+  }
+}
+
+/**
  * Get active quests for auto verification polling
  */
 export async function getActiveQuestsForAutoVerify(limit: number = 50): Promise<Quest[]> {
