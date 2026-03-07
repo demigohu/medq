@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import { useReownWallet } from "./useReownWallet"
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
-import { QuestManager } from "../../contracts/abi/QuestManager"
+import { QuestManager } from "../lib/QuestManager"
 const QuestManagerABI = QuestManager.abi
 
 const QUEST_MANAGER_ADDRESS = (process.env.NEXT_PUBLIC_QUEST_MANAGER_ADDRESS ||

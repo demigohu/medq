@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { api } from "@/lib/api"
+import { api, type Campaign } from "@/lib/api"
 
-export function useCampaigns(params?: { status?: string; limit?: number }) {
-  const [campaigns, setCampaigns] = useState<Record<string, unknown>[]>([])
+export function useCampaigns(params?: { status?: string; partner?: string; limit?: number }) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,7 +19,7 @@ export function useCampaigns(params?: { status?: string; limit?: number }) {
     } finally {
       setLoading(false)
     }
-  }, [params?.status, params?.limit])
+  }, [params?.status, params?.partner, params?.limit])
 
   useEffect(() => {
     fetchCampaigns()

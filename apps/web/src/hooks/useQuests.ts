@@ -3,6 +3,91 @@
 import { useState, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
 
+export interface QuestProgress {
+  accepted: boolean
+  completed: boolean
+}
+
+export function useQuest(questId: number | null) {
+  const [quest, setQuest] = useState<Record<string, unknown> | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchQuest = useCallback(async () => {
+    if (!questId) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.getQuest(questId)
+      setQuest(res.quest as Record<string, unknown>)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to fetch quest")
+    } finally {
+      setLoading(false)
+    }
+  }, [questId])
+
+  useEffect(() => {
+    fetchQuest()
+  }, [fetchQuest])
+
+  return { quest, loading, error, refetch: fetchQuest }
+}
+
+export function useQuestProgress(questId: number | null, participant: string | null) {
+  const [progress, setProgress] = useState<QuestProgress | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchProgress = useCallback(async () => {
+    if (!questId || !participant) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.getQuestProgress(questId, participant)
+      setProgress(res.progress)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to fetch progress")
+    } finally {
+      setLoading(false)
+    }
+  }, [questId, participant])
+
+  useEffect(() => {
+    fetchProgress()
+  }, [fetchProgress])
+
+  return { progress, loading, error, refetch: fetchProgress }
+}
+
+export function useSubmitProof() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submitProof = useCallback(
+    async (
+      questId: number,
+      data: { transactionHash: string; participant?: string }
+    ) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await api.submitProof(questId, data)
+        return result
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to submit proof"
+        setError(msg)
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
+  return { submitProof, loading, error }
+}
+
 export function useAllQuests(participant?: string | null) {
   const [quests, setQuests] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(false)

@@ -57,6 +57,7 @@ apps/api/*.tsbuildinfo
 # Backend specific
 apps/api/dist/
 apps/api/.env.local
+backend
 
 # Foundry / Smart Contracts
 # Keep lib/ folder but ignore all its contents
