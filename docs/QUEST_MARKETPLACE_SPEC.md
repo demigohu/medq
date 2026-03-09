@@ -159,7 +159,9 @@ Jika AI tidak return `medqAmountPerQuest` atau invalid:
 
 ```
 - Deposit USDC dari partner
+- Platform fee: 0.5% (50 bps) deducted on deposit; goes to feeCollector
 - Mapping: campaignId → balance
+- getDepositAmountForPool(poolAmount) → total to deposit (includes fee)
 - releaseReward(campaignId, participant, amount) → transfer USDC ke participant
 - Hanya authorized (oracle/backend) yang bisa release
 ```

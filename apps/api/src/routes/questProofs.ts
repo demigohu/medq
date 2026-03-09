@@ -15,7 +15,7 @@ import {
   type Quest,
 } from "../services/dbService"
 
-export const questProofsRouter = Router()
+export const questProofsRouter: Router = Router()
 
 const submitProofSchema = z.object({
   transactionHash: z.string().min(1),

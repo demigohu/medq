@@ -15,7 +15,7 @@ export interface Campaign {
   partner_wallet: string
   title: string
   status: string
-  template_type: "swap" | "deposit" | "borrow" | "stake"
+  template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
   template_params: Record<string, unknown>
   pool_token: string
   pool_amount: string | number
@@ -665,7 +665,7 @@ export async function logAIGeneration(logData: {
 export async function createCampaign(campaign: {
   partner_wallet: string
   title: string
-  template_type: "swap" | "deposit" | "borrow" | "stake"
+  template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
   template_params: Record<string, unknown>
   pool_token?: string
   pool_amount: number
@@ -718,8 +718,27 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
 export async function listCampaigns(options?: {
   status?: string
   partner_wallet?: string
+  participant?: string
   limit?: number
 }): Promise<Campaign[]> {
+  if (options?.participant) {
+    const { data: participantRows, error: pe } = await supabase
+      .from("campaign_participants")
+      .select("campaign_id, quest_id_on_chain")
+      .eq("participant_wallet", options.participant.toLowerCase())
+    if (pe || !participantRows?.length) return []
+    const campaignIds = participantRows.map((r) => r.campaign_id)
+    const { data, error } = await supabase
+      .from("campaigns")
+      .select("*")
+      .in("id", campaignIds)
+      .order("created_at", { ascending: false })
+      .limit(options.limit ?? 50)
+    if (error) return []
+    const campaigns = (data ?? []) as Campaign[]
+    const questMap = new Map(participantRows.map((r) => [r.campaign_id, r.quest_id_on_chain]))
+    return campaigns.map((c) => ({ ...c, quest_id_on_chain: questMap.get(c.id) } as Campaign & { quest_id_on_chain?: number }))
+  }
   let query = supabase.from("campaigns").select("*").order("created_at", { ascending: false })
   if (options?.status) query = query.eq("status", options.status)
   if (options?.partner_wallet) query = query.eq("partner_wallet", options.partner_wallet.toLowerCase())

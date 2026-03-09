@@ -27,7 +27,14 @@ import {
 } from "@/components/ui/tooltip"
 import TextAlign from '@tiptap/extension-text-align'
 
-export default function RichTextEditor() {
+interface RichTextEditorProps {
+    /** Controlled value (HTML string) */
+    value?: string
+    /** Called when content changes */
+    onChange?: (html: string) => void
+}
+
+export default function RichTextEditor({ value, onChange }: RichTextEditorProps = {}) {
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
@@ -104,14 +111,21 @@ export default function RichTextEditor() {
                 nocookie: true,
             }),
         ],
-        content: `<p>Quest description</p>`,
+        content: value ?? `<p>Quest description</p>`,
         editorProps: {
             attributes: {
                 class:
                     "focus:outline-none min-h-[200px] text-sm prose prose-invert",
             },
         },
+        onUpdate: onChange ? ({ editor }) => onChange(editor.getHTML()) : undefined,
     })
+
+    useEffect(() => {
+        if (editor && value !== undefined && value !== editor.getHTML()) {
+            editor.commands.setContent(value, false)
+        }
+    }, [editor, value])
 
     const setLink = useCallback(() => {
         const previousUrl = editor?.getAttributes('link').href

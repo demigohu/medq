@@ -18,6 +18,11 @@ export interface QuestMetadataReward {
   badgeLevel?: number
 }
 
+export interface QuestMetadataCampaignReward {
+  token?: string
+  amount?: string
+}
+
 export interface QuestMetadata {
   title?: string
   summary?: string
@@ -30,6 +35,7 @@ export interface QuestMetadata {
   steps?: QuestMetadataStep[]
   parameters?: QuestMetadataParameters
   reward?: QuestMetadataReward
+  campaignReward?: QuestMetadataCampaignReward
   participant?: string
   extraNotes?: string
   metadataSnippet?: string

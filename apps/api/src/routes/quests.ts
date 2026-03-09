@@ -6,7 +6,7 @@ import { generateInitialQuests, getUserActiveQuests } from "../services/dailyWee
 import { supabase } from "../lib/supabase"
 import type { OnChainReward } from "../services/rewardsService.js"
 
-export const questsRouter = Router()
+export const questsRouter: Router = Router()
 
 /**
  * GET /quests

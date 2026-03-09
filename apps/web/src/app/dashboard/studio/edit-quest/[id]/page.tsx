@@ -2,12 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Calendar as CalendarIcon, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAccount } from "wagmi";
+import { api, type Campaign } from "@/lib/api";
+import { useCampaignBalance, useDepositAmountForPool } from "@/hooks/useCampaignEscrow";
 import {
   Field,
   FieldDescription,
@@ -32,194 +33,81 @@ import {
 import RichTextEditor from "@/components/rich-text-editor";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { DepositActivateDialog } from "@/components/deposit-activate-dialog";
 
-const questSchema = z
-  .object({
-    // Step 1
-    title: z.string().min(1, "Title is required"),
-    description: z
-      .string()
-      .min(1, "Description is required")
-      .refine(
-        (val) => val.replace(/<[^>]*>/g, "").trim().length > 0,
-        "Description cannot be empty"
-      ),
-    periodStart: z.string().min(1, "Start date is required"),
-    periodEnd: z.string().min(1, "End date is required"),
-    thumbnail: z
-      .any()
-      .refine((files) => files && files.length > 0, "Thumbnail is required"),
-    // Step 2
-    network: z.string().min(1, "Network is required"),
-    token: z.string().min(1, "Token is required"),
-    token_amount_per_winner: z
-      .string()
-      .min(1, "Token amount is required")
-      .refine((v) => !Number.isNaN(Number(v)) && Number(v) > 0, {
-        message: "Token amount must be a positive number",
-      }),
-    winners: z
-      .string()
-      .min(1, "Number of winners is required")
-      .refine((v) => Number.isInteger(Number(v)) && Number(v) > 0, {
-        message: "Winners must be a positive integer",
-      }),
-    distribution: z.enum(["raffle", "fcfs"], {
-      required_error: "Distribution type is required",
-    }),
-  })
-  .refine(
-    (data) =>
-      !data.periodStart ||
-      !data.periodEnd ||
-      new Date(data.periodEnd) >= new Date(data.periodStart),
-    {
-      message: "End date must be after start date",
-      path: ["periodEnd"],
-    }
-  );
-
+const questSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  periodStart: z.string(),
+  periodEnd: z.string(),
+  thumbnail: z.any().optional(),
+  network: z.string(),
+  token: z.string(),
+  token_amount_per_winner: z.string(),
+  winners: z.string(),
+})
 type QuestFormValues = z.infer<typeof questSchema>;
 
-type QuestType = {
-  id: string;
-  partner_wallet: string;
-  title: string;
-  template_type: string;
-  description: string;
-  thumbnail: string;
-  status: string;
-  participants: number;
-  period_start: string;
-  period_end: string;
-  network: string;
-  token: string;
-  token_amount_per_winner: string;
-  distribution: string;
-  updatedAt: string;
-  createdAt: string;
-};
-
-const dummyQuests: QuestType[] = [
-  {
-    id: "1",
-    partner_wallet: "0xA1b2C3d4E5f678901234567890abcdef12345678",
-    title: "Complete DeFi Swap Challenge",
-    template_type: "DEFI",
-    description: "<p>Quest description</p>",
-    thumbnail: "https://picsum.photos/seed/defi/600/400",
-    status: "PUBLISHED",
-    participants: 128,
-    period_start: "2026-03-01T00:00:00Z",
-    period_end: "2026-03-31T23:59:59Z",
-    network: "ethereum",
-    token: "usdc",
-    token_amount_per_winner: "10",
-    distribution: "raffle",
-    updatedAt: "2026-03-03T10:15:00Z",
-    createdAt: "2026-02-25T08:00:00Z",
-  },
-  {
-    id: "2",
-    partner_wallet: "0xBb7dF9aC81234567890aBCdEfF1234567890abcd",
-    title: "NFT Minting Sprint",
-    template_type: "NFT",
-    description: "<p>Quest description</p>",
-    thumbnail: "https://picsum.photos/seed/nft/600/400",
-    status: "PUBLISHED",
-    participants: 0,
-    period_start: "2026-04-01T00:00:00Z",
-    period_end: "2026-04-15T23:59:59Z",
-    network: "ethereum",
-    token: "usdc",
-    token_amount_per_winner: "7",
-    distribution: "raffle",
-    updatedAt: "2026-03-04T09:00:00Z",
-    createdAt: "2026-03-01T12:30:00Z",
-  },
-  {
-    id: "3",
-    partner_wallet: "0xCcDeF1234567890abcdefABCDEF1234567890Ef12",
-    title: "Liquidity Provider Booster",
-    template_type: "LIQUIDITY",
-    description: "<p>Quest description</p>",
-    thumbnail: "https://picsum.photos/seed/liquidity/600/400",
-    status: "NOT_PUBLISHED",
-    participants: 342,
-    period_start: "2026-02-01T00:00:00Z",
-    period_end: "2026-02-28T23:59:59Z",
-    network: "ethereum",
-    token: "usdc",
-    token_amount_per_winner: "5",
-    distribution: "raffle",
-    updatedAt: "2026-03-01T00:10:00Z",
-    createdAt: "2026-01-25T14:20:00Z",
-  },
-];
-
-const STEP_LABELS = ["Quest Info", "Rewards Info"] as const;
+const STEP_LABELS = ["Quest Info", "Rewards Info", "Quest Activate"] as const;
 
 export default function EditQuestPage() {
   const params = useParams<{ id: string }>();
-  const [step, setStep] = useState<0 | 1>(0);
-  const [initialThumbnailUrl, setInitialThumbnailUrl] = useState<string | null>(
-    null
-  );
+  const { address, isConnected } = useAccount();
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [initialThumbnailUrl, setInitialThumbnailUrl] = useState<string | null>(null);
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+
+  const poolAmountForFee = campaign ? Number(campaign.pool_amount) || 0 : 0;
+  const { balanceFormatted } = useCampaignBalance(campaign?.id ?? null);
+  const { depositAmount, feeAmount } = useDepositAmountForPool(poolAmountForFee);
 
   const form = useForm<QuestFormValues>({
     resolver: zodResolver(questSchema),
     defaultValues: {
       title: "",
-      description: "",
+      description: "<p></p>",
       periodStart: "",
       periodEnd: "",
-      network: "",
-      token: "",
+      network: "hedera",
+      token: "usdc",
       token_amount_per_winner: "",
       winners: "",
-      distribution: undefined,
       thumbnail: undefined,
     },
   });
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    reset,
-    formState: { errors },
-  } = form;
-
+  const { control, handleSubmit, watch, setValue, reset } = form;
   const thumbnailFiles = watch("thumbnail");
-  const descriptionValue = watch("description");
 
-  // Initialize form values from selected quest (dummy data for now)
   useEffect(() => {
     const id = params?.id;
     if (!id) return;
 
-    const quest = dummyQuests.find((q) => q.id === id.toString());
-    if (!quest) return;
+    api.getCampaign(id)
+      .then((c) => {
+        setCampaign(c);
+        setInitialThumbnailUrl(c.thumbnail ?? null);
+        const poolAmount = Number(c.pool_amount) || 0;
+        const maxParticipants = c.max_participants || 1;
+        const rewardPerQuest = poolAmount / maxParticipants;
 
-    setInitialThumbnailUrl(quest.thumbnail);
-
-    reset({
-      title: quest.title,
-      description: quest.description,
-      periodStart: quest.period_start,
-      periodEnd: quest.period_end,
-      network: quest.network,
-      token: quest.token,
-      token_amount_per_winner: quest.token_amount_per_winner,
-      winners: quest.participants.toString(),
-      distribution: quest.distribution as "raffle" | "fcfs",
-    });
-
-    // Mark thumbnail as "present" for validation purposes,
-    // while we rely on `initialThumbnailUrl` for the preview.
-    setValue("thumbnail", [{} as any], { shouldValidate: false });
-  }, [params, reset, setValue]);
+        reset({
+          title: c.title,
+          description: c.description ?? "<p></p>",
+          periodStart: c.start_at ?? "",
+          periodEnd: c.end_at ?? "",
+          network: "hedera",
+          token: (c.pool_token ?? "usdc").toLowerCase(),
+          token_amount_per_winner: String(rewardPerQuest),
+          winners: String(maxParticipants),
+        });
+        setValue("thumbnail", [{}], { shouldValidate: false });
+      })
+      .catch(() => setCampaign(null))
+      .finally(() => setLoading(false));
+  }, [params?.id, reset, setValue]);
 
 
   const previewUrl = useMemo(() => {
@@ -254,41 +142,120 @@ export default function EditQuestPage() {
     }
   };
 
-  const onSubmit = (values: QuestFormValues) => {
-    // TODO: wire this to your API
-    // For now, just log them
-    // eslint-disable-next-line no-console
-    console.log("Create quest", values);
+  const poolAmount = campaign ? Number(campaign.pool_amount) || 0 : 0;
+  const needsDeposit = campaign?.status === "pending" && poolAmount > 0;
+  const hasEnoughBalance = balanceFormatted != null && balanceFormatted >= poolAmount;
+
+  const handleDepositSuccess = () => {
+    setDepositDialogOpen(false);
+    setCampaign((prev) => (prev ? { ...prev, status: "active" as const } : null));
   };
 
-  const onSaveDraft = (values: QuestFormValues) => {
-    // TODO: replace with actual draft persistence (e.g. localStorage / API)
-    // eslint-disable-next-line no-console
-    console.log("Save draft", values);
-  };
+  const onSubmit = () => {};
+  const onSaveDraft = () => {};
 
   const goNext = () => {
-    if (step === 0) {
-      setStep(1);
-    }
+    if (step === 0) setStep(1);
+    else if (step === 1) setStep(2);
   };
 
   const goPrevious = () => {
-    if (step === 1) {
-      setStep(0);
-    }
+    if (step === 1) setStep(0);
+    else if (step === 2) setStep(1);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0d0e13] px-5 pb-20 pt-24 text-white md:px-10">
+        <div className="mx-auto flex max-w-7xl items-center justify-center py-20">
+          <p className="text-zinc-400">Loading campaign...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen bg-[#0d0e13] px-5 pb-20 pt-24 text-white md:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 py-20">
+          <p className="text-zinc-400">Campaign not found</p>
+          <Button variant="default" onClick={() => window.history.back()} className="rounded bg-[#2845D6] text-white">
+            Go back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d0e13] px-5 pb-20 pt-24 text-white md:px-10">
-      <div className="mx-auto flex max-w-7xl gap-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        {/* Deposit / Activate section for pending campaigns */}
+        {campaign.status === "pending" && (
+          <div className="rounded border border-amber-500/30 bg-amber-500/5 p-6">
+            <h3 className="mb-2 font-semibold text-amber-500">Quest Activate — Deposit to Escrow</h3>
+            <p className="mb-4 text-sm text-zinc-400">
+              Fund your campaign pool. A 0.5% platform fee applies.
+            </p>
+            <div className="mb-4 rounded border border-[#1A1A1A] bg-black/40 p-4 space-y-2 max-w-md">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Pool amount (rewards)</span>
+                <span className="text-white">{poolAmount.toFixed(2)} USDC</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Platform fee (0.5%)</span>
+                <span className="text-white">{feeAmount.toFixed(2)} USDC</span>
+              </div>
+              <div className="flex justify-between text-sm font-medium border-t border-[#1A1A1A] pt-2 mt-2">
+                <span>Total to deposit</span>
+                <span className="text-emerald-400">{depositAmount.toFixed(2)} USDC</span>
+              </div>
+            </div>
+            {!isConnected ? (
+              <p className="text-sm text-amber-500">Connect your wallet to deposit.</p>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setDepositDialogOpen(true)}
+                  disabled={hasEnoughBalance}
+                  className="rounded bg-[#48A111] text-white hover:bg-[#48A111]/80"
+                >
+                  {hasEnoughBalance ? "Deposited" : "Deposit USDC & Activate"}
+                </Button>
+                <DepositActivateDialog
+                  open={depositDialogOpen}
+                  onOpenChange={setDepositDialogOpen}
+                  campaignId={campaign.id}
+                  depositAmount={depositAmount}
+                  onSuccess={handleDepositSuccess}
+                />
+              </>
+            )}
+            {balanceFormatted != null && (
+              <p className="mt-2 text-xs text-zinc-500">Escrow balance: {balanceFormatted} USDC</p>
+            )}
+          </div>
+        )}
+
+        {campaign.status === "active" && (
+          <div className="rounded border border-emerald-500/30 bg-emerald-500/5 px-6 py-3">
+            <p className="text-sm text-emerald-500">Campaign is active. Users can join and complete quests.</p>
+          </div>
+        )}
+
+      <div className="flex gap-8">
         {/* Stepper */}
         <aside className="hidden w-40 flex-col gap-6 md:flex">
           {STEP_LABELS.map((label, index) => {
             const isActive = step === index;
             const isCompleted = step > index;
             return (
-              <div key={label} className="flex items-center gap-3">
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStep(index as 0 | 1 | 2)}
+                className="flex items-center gap-3 text-left w-full"
+              >
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold transition
                   ${isActive
@@ -308,7 +275,7 @@ export default function EditQuestPage() {
                     {label}
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </aside>
@@ -318,12 +285,14 @@ export default function EditQuestPage() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-white">
-                {step === 0 ? "Quest Info" : "Rewards Info"}
+                {step === 0 ? "Quest Info" : step === 1 ? "Rewards Info" : "Quest Activate"}
               </h1>
               <p className="mt-1 text-sm text-white/60">
                 {step === 0
                   ? "Set up the basic information for your quest."
-                  : "Configure rewards and distribution for your quest."}
+                  : step === 1
+                    ? "Configure rewards and distribution for your quest."
+                    : "Deposit USDC to escrow and activate your campaign."}
               </p>
             </div>
             <Button
@@ -340,7 +309,54 @@ export default function EditQuestPage() {
             className="space-y-10 rounded border border-white/10 bg-linear-to-b from-zinc-950/80 to-black/80 p-6 shadow-xl"
             onSubmit={handleSubmit(onSubmit)}
           >
-            {step === 0 ? (
+            {step === 2 ? (
+              <section className="space-y-6">
+                <FieldGroup>
+                  <h3 className="font-medium text-white">Deposit to Escrow</h3>
+                  <p className="text-sm text-zinc-400">
+                    Fund your campaign pool. A 0.5% platform fee applies.
+                  </p>
+                  <div className="rounded border border-[#1A1A1A] bg-black/40 p-4 space-y-2 max-w-md">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Pool amount (rewards)</span>
+                      <span className="text-white">{poolAmount.toFixed(2)} USDC</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Platform fee (0.5%)</span>
+                      <span className="text-white">{feeAmount.toFixed(2)} USDC</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium border-t border-[#1A1A1A] pt-2 mt-2">
+                      <span>Total to deposit</span>
+                      <span className="text-emerald-400">{depositAmount.toFixed(2)} USDC</span>
+                    </div>
+                  </div>
+                  {!isConnected ? (
+                    <p className="text-sm text-amber-500">Connect your wallet to deposit.</p>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={() => setDepositDialogOpen(true)}
+                        disabled={hasEnoughBalance}
+                        className="rounded bg-[#48A111] text-white hover:bg-[#48A111]/80"
+                      >
+                        {hasEnoughBalance ? "Deposited" : "Deposit USDC & Activate"}
+                      </Button>
+                      <DepositActivateDialog
+                        open={depositDialogOpen}
+                        onOpenChange={setDepositDialogOpen}
+                        campaignId={campaign.id}
+                        depositAmount={depositAmount}
+                        onSuccess={handleDepositSuccess}
+                      />
+                    </>
+                  )}
+                  {balanceFormatted != null && (
+                    <p className="text-xs text-zinc-500">Escrow balance: {balanceFormatted} USDC</p>
+                  )}
+                </FieldGroup>
+              </section>
+            ) : step === 0 ? (
               <section className="space-y-6">
                 <FieldGroup>
                   {/* Title */}
@@ -365,17 +381,16 @@ export default function EditQuestPage() {
                   />
 
                   {/* Description */}
-                  <Field data-invalid={!!errors.description}>
-                    <FieldLabel>
-                      Description <span className="text-red-500">*</span>
-                    </FieldLabel>
-                    <div>
-                      <RichTextEditor />
-                    </div>
-                    {errors.description && (
-                      <FieldError errors={[errors.description]} />
+                  <Controller
+                    name="description"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>Description</FieldLabel>
+                        <RichTextEditor value={field.value} onChange={field.onChange} />
+                      </Field>
                     )}
-                  </Field>
+                  />
 
                   {/* Quest period */}
                   <Field>
@@ -563,11 +578,7 @@ export default function EditQuestPage() {
                                 <SelectValue placeholder="Select network" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ethereum">
-                                  Ethereum
-                                </SelectItem>
-                                <SelectItem value="polygon">Polygon</SelectItem>
-                                <SelectItem value="bsc">BSC</SelectItem>
+                                <SelectItem value="hedera">Hedera Testnet</SelectItem>
                               </SelectContent>
                             </Select>
                             {fieldState.invalid && (
@@ -653,37 +664,6 @@ export default function EditQuestPage() {
                       </Field>
                     )}
                   />
-
-                  {/* Distribution */}
-                  <Controller
-                    name="distribution"
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>
-                          Reward Distribution{" "}
-                          <span className="text-red-500">*</span>
-                        </FieldLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
-                            <SelectValue placeholder="Select distribution" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="raffle">Raffle</SelectItem>
-                            <SelectItem value="fcfs">
-                              First-come, first-served (FCFS)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
                 </FieldGroup>
               </section>
             )}
@@ -709,18 +689,22 @@ export default function EditQuestPage() {
                 >
                   Next
                 </Button>
-              ) : (
+              ) : step === 1 ? (
                 <Button
-                  type="submit"
+                  type="button"
                   variant="default"
-                  className="text-white border border-[#1A1A1A] rounded bg-[#48A111] hover:bg-[#48A111]/80"
+                  onClick={goNext}
+                  className="text-white border border-[#1A1A1A] rounded bg-[#2845D6] hover:bg-[#2845D6]/80"
                 >
-                  Publish Quest
+                  Next
                 </Button>
+              ) : (
+                <div />
               )}
             </div>
           </form>
         </main>
+      </div>
       </div>
     </div>
   );

@@ -2,12 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Calendar as CalendarIcon, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
+import { api, type Campaign } from "@/lib/api";
+import { useDepositAmountForPool } from "@/hooks/useCampaignEscrow";
 import {
   Field,
   FieldDescription,
@@ -31,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import RichTextEditor from "@/components/rich-text-editor";
 import Image from "next/image";
+import { DepositActivateDialog } from "@/components/deposit-activate-dialog";
 
 const questSchema = z
   .object({
@@ -45,11 +48,14 @@ const questSchema = z
       ),
     periodStart: z.string().min(1, "Start date is required"),
     periodEnd: z.string().min(1, "End date is required"),
-    thumbnail: z
-      .any()
-      .refine((files) => files && files.length > 0, "Thumbnail is required"),
+    thumbnail: z.any().optional(),
+    thumbnailUrl: z.union([z.string().url(), z.literal("")]).optional(),
     // Step 2
-    network: z.string().min(1, "Network is required"),
+    template_type: z.enum(["swap", "deposit", "borrow", "stake", "other"], {
+      required_error: "Quest type is required",
+    }),
+    template_type_custom: z.string().optional(),
+    protocol_address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Protocol address is required (0x...40 hex)"),
     token: z.string().min(1, "Token is required"),
     token_amount_per_winner: z
       .string()
@@ -63,9 +69,6 @@ const questSchema = z
       .refine((v) => Number.isInteger(Number(v)) && Number(v) > 0, {
         message: "Winners must be a positive integer",
       }),
-    distribution: z.enum(["raffle", "fcfs"], {
-      required_error: "Distribution type is required",
-    }),
   })
   .refine(
     (data) =>
@@ -80,42 +83,73 @@ const questSchema = z
 
 type QuestFormValues = z.infer<typeof questSchema>;
 
-const STEP_LABELS = ["Quest Info", "Rewards Info"] as const;
+const STEP_LABELS = ["Quest Info", "Rewards Info", "Quest Activate"] as const;
+
+type ProtocolOption = { name: string; evmAddress: string; category: string };
 
 export default function CreateQuestPage() {
-  const [step, setStep] = useState<0 | 1>(0);
+  const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [protocols, setProtocols] = useState<ProtocolOption[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [createdCampaign, setCreatedCampaign] = useState<Campaign | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
 
   const form = useForm<QuestFormValues>({
     resolver: zodResolver(questSchema),
     defaultValues: {
       title: "",
-      description: "",
+      description: "<p>Quest description</p>",
       periodStart: "",
       periodEnd: "",
-      network: "",
-      token: "",
+      template_type: undefined,
+      template_type_custom: "",
+      protocol_address: "",
+      token: "usdc",
       token_amount_per_winner: "",
       winners: "",
-      distribution: undefined,
+      thumbnailUrl: "",
     },
   });
 
   const {
     control,
+    register,
     handleSubmit,
     watch,
     setValue,
     formState: { errors },
   } = form;
 
+  const tokenPerWinner = watch("token_amount_per_winner");
+  const winners = watch("winners");
+  const poolAmount = (Number(tokenPerWinner) || 0) * (Number(winners) || 0);
+  const { depositAmount, feeAmount } = useDepositAmountForPool(poolAmount);
+
   const thumbnailFiles = watch("thumbnail");
+  const thumbnailUrl = watch("thumbnailUrl");
+
+  useEffect(() => {
+    api.getProtocols().then((res) => {
+      setProtocols(
+        res.protocols.map((p) => ({
+          name: p.name,
+          evmAddress: p.evmAddress,
+          category: p.category,
+        }))
+      );
+    }).catch(console.error);
+  }, []);
 
   const previewUrl = useMemo(() => {
-    if (thumbnailFiles && thumbnailFiles.length > 0) {
+    if (thumbnailUrl?.trim()) return thumbnailUrl;
+    if (thumbnailFiles && thumbnailFiles.length > 0 && thumbnailFiles[0] instanceof File) {
       return URL.createObjectURL(thumbnailFiles[0]);
     }
     return null;
-  }, [thumbnailFiles]);
+  }, [thumbnailFiles, thumbnailUrl]);
 
   useEffect(() => {
     return () => {
@@ -127,6 +161,7 @@ export default function CreateQuestPage() {
 
   const handleClearThumbnail = () => {
     setValue("thumbnail", undefined);
+    setValue("thumbnailUrl", "");
     const input = document.getElementById(
       "quest-thumbnail-input"
     ) as HTMLInputElement | null;
@@ -135,29 +170,63 @@ export default function CreateQuestPage() {
     }
   };
 
-  const onSubmit = (values: QuestFormValues) => {
-    // TODO: wire this to your API
-    // For now, just log them
-    // eslint-disable-next-line no-console
-    console.log("Create quest", values);
+  const onSubmit = async (values: QuestFormValues) => {
+    if (!isConnected || !address) {
+      setError("Please connect your wallet");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const tokenPerWinner = Number(values.token_amount_per_winner);
+      const maxParticipants = Number(values.winners);
+      const poolAmt = tokenPerWinner * maxParticipants;
+      const thumbnail = values.thumbnailUrl?.trim() || undefined;
+
+      const templateParams: Record<string, unknown> = {
+        protocol_address: values.protocol_address,
+      };
+      if (values.template_type === "other" && values.template_type_custom) {
+        templateParams.custom_type = values.template_type_custom;
+      }
+      const campaign = await api.createCampaign({
+        partner_wallet: address,
+        title: values.title,
+        template_type: values.template_type as "swap" | "deposit" | "borrow" | "stake" | "other",
+        template_params: templateParams,
+        description: values.description,
+        thumbnail: thumbnail || undefined,
+        pool_amount: poolAmt,
+        max_participants: maxParticipants,
+        period_start: values.periodStart,
+        period_end: values.periodEnd,
+      });
+      setCreatedCampaign(campaign);
+      setStep(2);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create campaign");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const onSaveDraft = (values: QuestFormValues) => {
-    // TODO: replace with actual draft persistence (e.g. localStorage / API)
-    // eslint-disable-next-line no-console
-    console.log("Save draft", values);
+  const handleDepositSuccess = () => {
+    setDepositDialogOpen(false);
+    router.push(`/dashboard/studio/edit-quest/${createdCampaign?.id}`);
+  };
+
+  const onSaveDraft = (_values: QuestFormValues) => {
+    setError("Draft save not implemented. Complete and publish to create.");
   };
 
   const goNext = () => {
-    if (step === 0) {
-      setStep(1);
-    }
+    if (step === 0) setStep(1);
+    else if (step === 1) handleSubmit(onSubmit)();
   };
 
   const goPrevious = () => {
-    if (step === 1) {
-      setStep(0);
-    }
+    if (step === 1) setStep(0);
+    else if (step === 2) setStep(1);
   };
 
   return (
@@ -199,12 +268,14 @@ export default function CreateQuestPage() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-white">
-                {step === 0 ? "Quest Info" : "Rewards Info"}
+                {step === 0 ? "Quest Info" : step === 1 ? "Rewards Info" : "Quest Activate"}
               </h1>
               <p className="mt-1 text-sm text-white/60">
                 {step === 0
                   ? "Set up the basic information for your quest."
-                  : "Configure rewards and distribution for your quest."}
+                  : step === 1
+                    ? "Configure rewards and distribution for your quest."
+                    : "Deposit USDC to escrow and activate your campaign."}
               </p>
             </div>
             <Button
@@ -219,9 +290,56 @@ export default function CreateQuestPage() {
 
           <form
             className="space-y-10 rounded border border-white/10 bg-linear-to-b from-zinc-950/80 to-black/80 p-6 shadow-xl"
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={(e) => { e.preventDefault(); if (step === 1) handleSubmit(onSubmit)(e); }}
           >
-            {step === 0 ? (
+            {step === 2 ? (
+              <section className="space-y-6">
+                <FieldGroup>
+                  <h3 className="font-medium text-white">Deposit to Escrow</h3>
+                  <p className="text-sm text-zinc-400">
+                    Fund your campaign pool. A 0.5% platform fee applies.
+                  </p>
+                  <div className="rounded border border-[#1A1A1A] bg-black/40 p-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Pool amount (rewards)</span>
+                      <span className="text-white">{poolAmount.toFixed(2)} USDC</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Platform fee (0.5%)</span>
+                      <span className="text-white">{feeAmount.toFixed(2)} USDC</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium border-t border-[#1A1A1A] pt-2 mt-2">
+                      <span>Total to deposit</span>
+                      <span className="text-emerald-400">{depositAmount.toFixed(2)} USDC</span>
+                    </div>
+                  </div>
+                  {error && <p className="text-sm text-red-500">{error}</p>}
+                  {!isConnected ? (
+                    <p className="text-sm text-amber-500">Connect your wallet to deposit.</p>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={() => setDepositDialogOpen(true)}
+                        disabled={poolAmount <= 0}
+                        className="rounded bg-[#48A111] text-white hover:bg-[#48A111]/80"
+                      >
+                        Deposit USDC & Activate
+                      </Button>
+                      {createdCampaign && (
+                        <DepositActivateDialog
+                          open={depositDialogOpen}
+                          onOpenChange={setDepositDialogOpen}
+                          campaignId={createdCampaign.id}
+                          depositAmount={depositAmount}
+                          onSuccess={handleDepositSuccess}
+                        />
+                      )}
+                    </>
+                  )}
+                </FieldGroup>
+              </section>
+            ) : step === 0 ? (
               <section className="space-y-6">
                 <FieldGroup>
                   {/* Title */}
@@ -246,17 +364,21 @@ export default function CreateQuestPage() {
                   />
 
                   {/* Description */}
-                  <Field data-invalid={!!errors.description}>
-                    <FieldLabel>
-                      Description <span className="text-red-500">*</span>
-                    </FieldLabel>
-                    <div>
-                      <RichTextEditor />
-                    </div>
-                    {errors.description && (
-                      <FieldError errors={[errors.description]} />
+                  <Controller
+                    name="description"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>
+                          Description <span className="text-red-500">*</span>
+                        </FieldLabel>
+                        <RichTextEditor value={field.value} onChange={field.onChange} />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
                     )}
-                  </Field>
+                  />
 
                   {/* Quest period */}
                   <Field>
@@ -363,12 +485,21 @@ export default function CreateQuestPage() {
                   <Controller
                     name="thumbnail"
                     control={control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>
-                          Thumbnail <span className="text-red-500">*</span>
-                        </FieldLabel>
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>Thumbnail (optional)</FieldLabel>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <Controller
+                            name="thumbnailUrl"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                {...field}
+                                placeholder="Or paste image URL"
+                                className="max-w-xs bg-black/40 text-white border border-[#1A1A1A]"
+                              />
+                            )}
+                          />
                           <Button
                             type="button"
                             variant="default"
@@ -411,12 +542,8 @@ export default function CreateQuestPage() {
                           )}
                         </div>
                         <FieldDescription className="text-xs text-white/40">
-                          Recommended 800x400px or similar 2:1 ratio, JPG or
-                          PNG.
+                          Paste image URL or upload. Recommended 800x400px.
                         </FieldDescription>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
                       </Field>
                     )}
                   />
@@ -425,32 +552,45 @@ export default function CreateQuestPage() {
             ) : (
               <section className="space-y-6">
                 <FieldGroup>
-                  {/* Token info */}
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
+                  {/* Quest type & Protocol */}
                   <Field>
                     <FieldLabel>
-                      Token Info <span className="text-red-500">*</span>
+                      Quest Type & Protocol <span className="text-red-500">*</span>
                     </FieldLabel>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Controller
-                        name="network"
+                        name="template_type"
                         control={control}
                         render={({ field, fieldState }) => (
                           <Field data-invalid={fieldState.invalid}>
                             <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
+                              value={field.value ?? ""}
+                              onValueChange={(v) => {
+                                field.onChange(v === "" ? undefined : v);
+                                if (v !== "other") setValue("template_type_custom", "");
+                              }}
                             >
                               <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
-                                <SelectValue placeholder="Select network" />
+                                <SelectValue placeholder="Select quest type" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ethereum">
-                                  Ethereum
-                                </SelectItem>
-                                <SelectItem value="polygon">Polygon</SelectItem>
-                                <SelectItem value="bsc">BSC</SelectItem>
+                                <SelectItem value="swap">Swap</SelectItem>
+                                <SelectItem value="deposit">Deposit / Liquidity</SelectItem>
+                                <SelectItem value="borrow">Borrow / Lend</SelectItem>
+                                <SelectItem value="stake">Stake</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
                             </Select>
+                            {field.value === "other" && (
+                              <Input
+                                {...register("template_type_custom")}
+                                placeholder="e.g. Custom action type"
+                                className="mt-2 border border-[#1A1A1A] rounded bg-black/40 text-white"
+                              />
+                            )}
                             {fieldState.invalid && (
                               <FieldError errors={[fieldState.error]} />
                             )}
@@ -458,33 +598,75 @@ export default function CreateQuestPage() {
                         )}
                       />
                       <Controller
-                        name="token"
+                        name="protocol_address"
                         control={control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            >
-                              <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
-                                <SelectValue placeholder="Select token" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="medq">MEDQ</SelectItem>
-                                <SelectItem value="usdc">USDC</SelectItem>
-                                <SelectItem value="custom">
-                                  Custom token
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {fieldState.invalid && (
-                              <FieldError errors={[fieldState.error]} />
-                            )}
-                          </Field>
-                        )}
+                        render={({ field, fieldState }) => {
+                          const isCustom = !protocols.some((p) => p.evmAddress === field.value);
+                          const selectValue = isCustom ? "other" : field.value;
+                          return (
+                            <Field data-invalid={fieldState.invalid}>
+                              <Select
+                                value={selectValue}
+                                onValueChange={(v) => {
+                                  if (v === "other") {
+                                    field.onChange("");
+                                  } else {
+                                    field.onChange(v);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
+                                  <SelectValue placeholder="Select protocol" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {protocols.map((p) => (
+                                    <SelectItem key={p.evmAddress} value={p.evmAddress}>
+                                      {p.name} ({p.category})
+                                    </SelectItem>
+                                  ))}
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {selectValue === "other" && (
+                                <Input
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  placeholder="0x... (protocol address, 40 hex chars)"
+                                  className="mt-2 border border-[#1A1A1A] rounded bg-black/40 text-white font-mono text-sm"
+                                />
+                              )}
+                              {fieldState.invalid && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </Field>
+                          );
+                        }}
                       />
                     </div>
                   </Field>
+                  <Controller
+                    name="token"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>Reward Token</FieldLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
+                            <SelectValue placeholder="Select token" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="usdc">USDC</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
 
                   {/* Token amount */}
                   <Controller
@@ -535,36 +717,6 @@ export default function CreateQuestPage() {
                     )}
                   />
 
-                  {/* Distribution */}
-                  <Controller
-                    name="distribution"
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>
-                          Reward Distribution{" "}
-                          <span className="text-red-500">*</span>
-                        </FieldLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="border border-[#1A1A1A] rounded bg-black/40 text-white">
-                            <SelectValue placeholder="Select distribution" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="raffle">Raffle</SelectItem>
-                            <SelectItem value="fcfs">
-                              First-come, first-served (FCFS)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
                 </FieldGroup>
               </section>
             )}
@@ -590,14 +742,18 @@ export default function CreateQuestPage() {
                 >
                   Next
                 </Button>
-              ) : (
+              ) : step === 1 ? (
                 <Button
-                  type="submit"
+                  type="button"
                   variant="default"
+                  disabled={submitting}
+                  onClick={() => handleSubmit(onSubmit)()}
                   className="text-white border border-[#1A1A1A] rounded bg-[#48A111] hover:bg-[#48A111]/80"
                 >
-                  Publish Quest
+                  {submitting ? "Creating..." : "Next: Deposit & Activate"}
                 </Button>
+              ) : (
+                <div />
               )}
             </div>
           </form>

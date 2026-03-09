@@ -49,6 +49,30 @@ export const CAMPAIGN_ESCROW_ABI = [
   },
   {
     type: "function",
+    name: "feeBps",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDepositAmountForPool",
+    inputs: [{ name: "poolAmount", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getFeeAndPoolAmount",
+    inputs: [{ name: "depositAmount", type: "uint256", internalType: "uint256" }],
+    outputs: [
+      { name: "feeAmount", type: "uint256", internalType: "uint256" },
+      { name: "poolAmount", type: "uint256", internalType: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "rewardToken",
     inputs: [],
     outputs: [{ name: "", type: "address", internalType: "contract IERC20" }],

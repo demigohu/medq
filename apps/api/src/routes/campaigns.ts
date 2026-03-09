@@ -9,12 +9,12 @@ import {
 } from "../services/dbService"
 import { joinCampaign, activateCampaign } from "../services/campaignService"
 
-export const campaignsRouter = Router()
+export const campaignsRouter: Router = Router()
 
 const createCampaignSchema = z.object({
   partner_wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   title: z.string().min(2),
-  template_type: z.enum(["swap", "deposit", "borrow", "stake"]),
+  template_type: z.enum(["swap", "deposit", "borrow", "stake", "other"]),
   description: z.string().optional(),
   thumbnail: z.union([z.string().url(), z.literal("")]).optional(),
   template_params: z.record(z.string(), z.unknown()),
@@ -72,11 +72,13 @@ campaignsRouter.get("/", async (req, res, next) => {
   try {
     const status = req.query.status as string | undefined
     const partner = req.query.partner as string | undefined
+    const participant = req.query.participant as string | undefined
     const limit = req.query.limit ? Number(req.query.limit) : 50
 
     const campaigns = await listCampaigns({
       ...(status && { status }),
       ...(partner && { partner_wallet: partner }),
+      ...(participant && /^0x[a-fA-F0-9]{40}$/.test(participant) && { participant }),
       limit,
     })
     return res.json({ campaigns })
@@ -132,6 +134,32 @@ campaignsRouter.post("/:id/activate", async (req, res, next) => {
     await activateCampaign(req.params.id, escrowTxHash)
     return res.json({ message: "Campaign activated" })
   } catch (error) {
+    next(error)
+  }
+})
+
+const updateCampaignStatusSchema = z.object({
+  status: z.enum(["draft", "pending", "active", "completed", "cancelled"]),
+})
+
+/**
+ * PATCH /campaigns/:id
+ * Update campaign status (e.g. cancel)
+ */
+campaignsRouter.patch("/:id", async (req, res, next) => {
+  try {
+    const parsed = updateCampaignStatusSchema.parse(req.body)
+    const campaign = await getCampaignById(req.params.id)
+    if (!campaign) {
+      return res.status(404).json({ message: "Campaign not found" })
+    }
+    await updateCampaignStatus(req.params.id, parsed.status)
+    const updated = await getCampaignById(req.params.id)
+    return res.json(updated)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid input", errors: error.issues })
+    }
     next(error)
   }
 })

@@ -448,6 +448,17 @@ export default function QuestDetailPage() {
                   </div>
                 </div>
 
+                {metadata?.campaignReward?.amount && metadata.campaignReward.token && (
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                      Campaign reward
+                    </div>
+                    <div className="text-lg font-semibold text-emerald-400">
+                      {metadata.campaignReward.amount} {metadata.campaignReward.token}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2 border-t border-[#1A1A1A] pt-4 text-[11px]">
                   <div className="flex items-center justify-between text-zinc-500">
                     <span>Status</span>

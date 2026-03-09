@@ -63,16 +63,14 @@ effort/difficulty. Typical range 10-100 MEDQ. Be generous for engagement.`,
   ],
   [
     "human",
-    `Campaign: {title}
-Template: {template_type}
-Goal from template: {goal}
+    `Campaign data (full context):
+{campaignContext}
+
 Protocol: {protocol}
 Protocol Info: {protocolInfo}
 Participant wallet: {participant}
-Pool: {pool_amount} USDC
-Max participants: {max_participants}
-Reward per quest (USDC): {reward_per_quest_usdc}
-Determine medqAmountPerQuest based on pool value and engagement.
+
+Use all campaign data above to generate a tailored quest. Determine medqAmountPerQuest based on pool value and engagement.
 
 Schema:
 {formatInstructions}`,
@@ -86,6 +84,12 @@ const groqModel = new ChatGroq({
 })
 
 const chain = campaignQuestPrompt.pipe(groqModel).pipe(parser)
+
+/** Serialize campaign for AI context - pass all relevant data */
+function buildCampaignContext(campaign: Campaign): string {
+  const { id, partner_wallet, status, escrow_address, escrow_tx_hash, participant_count, claimed_count, created_at, updated_at, metadata_uri, ...relevant } = campaign
+  return JSON.stringify(relevant, null, 2)
+}
 
 function buildGoalFromTemplate(
   campaign: Campaign,
@@ -141,28 +145,24 @@ export async function generateQuestFromCampaign(
     throw new Error("Campaign template must include valid protocol_address")
   }
 
-  const protocol = getProtocolByAddress(protocolAddress)
-  if (!protocol) {
-    throw new Error(
-      `Unknown protocol: ${protocolAddress}. Supported: ${Object.values(PROTOCOLS)
-        .map((p) => p.evmAddress)
-        .join(", ")}`
-    )
+  const protocol = getProtocolByAddress(protocolAddress) ?? {
+    name: "Custom Protocol",
+    description: `Custom protocol at ${protocolAddress}`,
+    evmAddress: protocolAddress,
+    hederaId: "",
+    category: "swap" as const,
+    website: "",
+    logo: undefined,
   }
 
   const goal = buildGoalFromTemplate(campaign, protocol.name)
   const protocolAddressToUse = getProtocolRouterAddress(protocolAddress)
 
   const questDraft = (await chain.invoke({
-    title: campaign.title,
-    template_type: campaign.template_type,
-    goal,
+    campaignContext: buildCampaignContext(campaign),
     protocol: protocol.name,
     protocolInfo: `${protocol.name} - ${protocol.description}`,
     participant,
-    pool_amount: String(campaign.pool_amount),
-    max_participants: String(campaign.max_participants),
-    reward_per_quest_usdc: String(campaign.reward_per_quest_usdc),
     formatInstructions: parser.getFormatInstructions(),
   })) as CampaignQuestDraft
 

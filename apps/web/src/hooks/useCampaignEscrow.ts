@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useRef, useEffect } from "react"
 import {
   useWriteContract,
   useReadContract,
@@ -28,34 +28,51 @@ export function useCampaignEscrow() {
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
+  const stateRef = useRef({ hash, isSuccess, writeError })
+  useEffect(() => {
+    stateRef.current = { hash, isSuccess, writeError }
+  }, [hash, isSuccess, writeError])
+
+  /**
+   * Wait for tx confirmation. When ignoreHash is set, we wait for a NEW tx
+   * (different hash) to confirm - avoids resolving with previous tx's confirmation
+   * when approve confirms and we immediately call deposit (hash hasn't updated yet).
+   */
   const waitForTx = useCallback(
-    () =>
+    (ignoreHash?: `0x${string}`) =>
       new Promise<`0x${string}`>((resolve, reject) => {
-        if (isSuccess && hash) {
-          resolve(hash)
-          return
+        let iv: ReturnType<typeof setInterval> | null = null
+        let to: ReturnType<typeof setTimeout> | null = null
+        const cleanup = () => {
+          if (iv) clearInterval(iv)
+          if (to) clearTimeout(to)
+          iv = to = null
         }
-        if (writeError) {
-          reject(new Error((writeError as Error)?.message || "Transaction failed"))
-          return
-        }
-        const interval = setInterval(() => {
-          if (isSuccess && hash) {
-            clearInterval(interval)
-            resolve(hash)
-          } else if (writeError) {
-            clearInterval(interval)
-            reject(new Error((writeError as Error)?.message || "Transaction failed"))
+        const check = () => {
+          const { hash: h, isSuccess: ok, writeError: err } = stateRef.current
+          if (err) {
+            cleanup()
+            reject(new Error((err as Error)?.message || "Transaction failed"))
+            return true
           }
-        }, 500)
-        setTimeout(() => {
-          clearInterval(interval)
-          if (!isSuccess && !writeError) {
+          if (ok && h) {
+            if (ignoreHash && h === ignoreHash) return false
+            cleanup()
+            resolve(h)
+            return true
+          }
+          return false
+        }
+        if (check()) return
+        iv = setInterval(() => check(), 300)
+        to = setTimeout(() => {
+          cleanup()
+          if (!stateRef.current.isSuccess && !stateRef.current.writeError) {
             reject(new Error("Transaction timeout"))
           }
-        }, 60000)
+        }, 120000)
       }),
-    [hash, isSuccess, writeError]
+    []
   )
 
   const approveUsdc = useCallback(
@@ -79,7 +96,7 @@ export function useCampaignEscrow() {
   )
 
   const deposit = useCallback(
-    async (campaignId: string, amount: number | string) => {
+    async (campaignId: string, amount: number | string, previousTxHash?: `0x${string}`) => {
       if (!isConnected || !address) {
         throw new Error("Wallet not connected")
       }
@@ -94,7 +111,7 @@ export function useCampaignEscrow() {
         functionName: "deposit",
         args: [campaignIdBytes, amountWei],
       })
-      return waitForTx()
+      return waitForTx(previousTxHash)
     },
     [isConnected, address, isHederaNetwork, writeContract, waitForTx]
   )
@@ -125,5 +142,24 @@ export function useCampaignBalance(campaignId: string | null) {
     balanceFormatted: data != null ? Number(data) / 1e6 : null,
     error,
     isPending,
+  }
+}
+
+/** Get deposit amount needed for desired pool (includes 0.5% fee). Falls back to poolAmount if contract has no fee. */
+export function useDepositAmountForPool(poolAmount: number) {
+  const poolAmountWei = BigInt(Math.floor(poolAmount * 1e6)) // USDC 6 decimals
+  const { data, error } = useReadContract({
+    address: CAMPAIGN_ESCROW_ADDRESS,
+    abi: CAMPAIGN_ESCROW_ABI,
+    functionName: "getDepositAmountForPool",
+    args: poolAmount > 0 ? [poolAmountWei] : undefined,
+  })
+  const depositAmount = data != null ? Number(data) / 1e6 : poolAmount
+  const feeAmount = poolAmount > 0 ? depositAmount - poolAmount : 0
+  return {
+    depositAmount: data != null ? depositAmount : poolAmount,
+    feeAmount,
+    feeBps: 50, // 0.5%
+    hasFeeSupport: !error && data != null,
   }
 }

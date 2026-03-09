@@ -175,11 +175,13 @@ class APIClient {
   async listCampaigns(params?: {
     status?: string
     partner?: string
+    participant?: string
     limit?: number
   }) {
     const search = new URLSearchParams()
     if (params?.status) search.set("status", params.status)
     if (params?.partner) search.set("partner", params.partner)
+    if (params?.participant) search.set("participant", params.participant)
     if (params?.limit) search.set("limit", String(params.limit))
     const q = search.toString()
     return this.request<{ campaigns: Campaign[] }>(
@@ -190,7 +192,7 @@ class APIClient {
   async createCampaign(data: {
     partner_wallet: string
     title: string
-    template_type: "swap" | "deposit" | "borrow" | "stake"
+    template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
     description?: string
     thumbnail?: string
     template_params: Record<string, unknown>
@@ -226,6 +228,13 @@ class APIClient {
       body: JSON.stringify({ escrow_tx_hash: escrowTxHash }),
     })
   }
+
+  async updateCampaignStatus(id: string, status: string) {
+    return this.request<Campaign>(`/campaigns/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    })
+  }
 }
 
 export interface Campaign {
@@ -233,7 +242,7 @@ export interface Campaign {
   partner_wallet: string
   title: string
   status: "draft" | "pending" | "active" | "completed" | "cancelled"
-  template_type: "swap" | "deposit" | "borrow" | "stake"
+  template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
   template_params: Record<string, unknown>
   pool_token: string
   pool_amount: string | number

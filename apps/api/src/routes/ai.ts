@@ -3,7 +3,7 @@ import { Router } from "express"
 import { generateQuestWithGroq } from "../services/aiQuestGenerator"
 import { getAllProtocols } from "../lib/protocols"
 
-export const aiRouter = Router()
+export const aiRouter: Router = Router()
 
 /**
  * GET /ai/protocols

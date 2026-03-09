@@ -1,12 +1,12 @@
 "use client";
 
 import { DataTable } from '@/components/data-table';
-import { useIsTablet } from '@/hooks/breakpoint';
-import { cn } from '@/lib/utils';
-import { CircleCheck, CircleDashed, Menu, Plus, Search, Trash2, X } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { api, type Campaign } from '@/lib/api';
+import { CircleCheck, CircleDashed, Plus, Search, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -45,6 +45,27 @@ type QuestType = {
     createdAt: string;
 }
 
+function campaignToQuestType(c: Campaign): QuestType {
+    return {
+        id: c.id,
+        partner_wallet: c.partner_wallet,
+        title: c.title,
+        template_type: c.template_type,
+        description: c.description ?? "",
+        thumbnail: c.thumbnail ?? "https://picsum.photos/seed/quest/600/400",
+        status: c.status === "active" ? "PUBLISHED" : "NOT_PUBLISHED",
+        participants: c.participant_count ?? 0,
+        period_start: c.start_at ?? "",
+        period_end: c.end_at ?? "",
+        network: "hedera",
+        token: (c.pool_token ?? "USDC").toLowerCase(),
+        token_amount_per_winner: String(c.reward_per_quest_usdc ?? 0),
+        distribution: "raffle",
+        updatedAt: c.updated_at,
+        createdAt: c.created_at,
+    };
+}
+
 const CENTER_ITEMS: {
     key: string;
     label: string;
@@ -67,68 +88,14 @@ const CENTER_ITEMS: {
 
 export default function StudioPage() {
     const router = useRouter();
+    const { address, isConnected } = useAccount();
     const [questData, setQuestData] = useState<QuestType[]>([]);
     const [selectedRowId, setSelectedRowId] = useState<string[]>([]);
     const [isDeleteQuestDialogOpen, setIsDeleteQuestDialogOpen] = useState(false);
     const [selectedQuest, setSelectedQuest] = useState<QuestType | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-
-    const dummyQuests: QuestType[] = [
-        {
-            id: "1",
-            partner_wallet: "0xA1b2C3d4E5f678901234567890abcdef12345678",
-            title: "Complete DeFi Swap Challenge",
-            template_type: "DEFI",
-            description: "<p>Quest description</p>",
-            thumbnail: "https://picsum.photos/seed/defi/600/400",
-            status: "PUBLISHED",
-            participants: 128,
-            period_start: "2026-03-01T00:00:00Z",
-            period_end: "2026-03-31T23:59:59Z",
-            network: "ethereum",
-            token: "usdc",
-            token_amount_per_winner: "10",
-            distribution: "raffle",
-            updatedAt: "2026-03-03T10:15:00Z",
-            createdAt: "2026-02-25T08:00:00Z",
-        },
-        {
-            id: "2",
-            partner_wallet: "0xBb7dF9aC81234567890aBCdEfF1234567890abcd",
-            title: "NFT Minting Sprint",
-            template_type: "NFT",
-            description: "<p>Quest description</p>",
-            thumbnail: "https://picsum.photos/seed/nft/600/400",
-            status: "PUBLISHED",
-            participants: 0,
-            period_start: "2026-04-01T00:00:00Z",
-            period_end: "2026-04-15T23:59:59Z",
-            network: "ethereum",
-            token: "usdc",
-            token_amount_per_winner: "7",
-            distribution: "raffle",
-            updatedAt: "2026-03-04T09:00:00Z",
-            createdAt: "2026-03-01T12:30:00Z",
-        },
-        {
-            id: "3",
-            partner_wallet: "0xCcDeF1234567890abcdefABCDEF1234567890Ef12",
-            title: "Liquidity Provider Booster",
-            template_type: "LIQUIDITY",
-            description: "<p>Quest description</p>",
-            thumbnail: "https://picsum.photos/seed/liquidity/600/400",
-            status: "NOT_PUBLISHED",
-            participants: 342,
-            period_start: "2026-02-01T00:00:00Z",
-            period_end: "2026-02-28T23:59:59Z",
-            network: "ethereum",
-            token: "usdc",
-            token_amount_per_winner: "5",
-            distribution: "raffle",
-            updatedAt: "2026-03-01T00:10:00Z",
-            createdAt: "2026-01-25T14:20:00Z",
-        },
-    ];
+    const [loading, setLoading] = useState(true);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const columns: ColumnDef<QuestType>[] = [
         {
@@ -238,9 +205,25 @@ export default function StudioPage() {
         },
     ];
 
+    const fetchCampaigns = useCallback(async () => {
+        setLoading(true);
+        try {
+            const { campaigns } = await api.listCampaigns({
+                partner: isConnected && address ? address : undefined,
+                limit: 100,
+            });
+            setQuestData(campaigns.map(campaignToQuestType));
+        } catch (err) {
+            console.error("Failed to fetch campaigns:", err);
+            setQuestData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [isConnected, address]);
+
     useEffect(() => {
-        setQuestData(dummyQuests);
-    }, []);
+        fetchCampaigns();
+    }, [fetchCampaigns]);
 
     const filteredQuests = useMemo(() => {
         if (!searchTerm.trim()) return questData;
@@ -263,6 +246,21 @@ export default function StudioPage() {
         setSelectedQuest(row);
         setIsDeleteQuestDialogOpen(true);
     }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
+        if (!selectedQuest) return;
+        setDeleteLoading(true);
+        try {
+            await api.updateCampaignStatus(selectedQuest.id, "cancelled");
+            setQuestData((prev) => prev.filter((q) => q.id !== selectedQuest.id));
+            setIsDeleteQuestDialogOpen(false);
+            setSelectedQuest(null);
+        } catch (err) {
+            console.error("Failed to delete campaign:", err);
+        } finally {
+            setDeleteLoading(false);
+        }
+    }, [selectedQuest]);
 
     return (
         <>
@@ -288,6 +286,13 @@ export default function StudioPage() {
                         </div>
 
                         <div className='space-y-4'>
+                            {!isConnected && (
+                                <p className="text-sm text-amber-500">Connect your wallet to view and manage your campaigns.</p>
+                            )}
+                            {loading ? (
+                                <p className="text-sm text-zinc-400">Loading campaigns...</p>
+                            ) : (
+                            <>
                             <InputGroup className="max-w-xs border border-[#1A1A1A] rounded bg-black text-white">
                                 <InputGroupInput
                                     placeholder="Search quest..."
@@ -306,6 +311,8 @@ export default function StudioPage() {
                                 onSelectedRowsChange={handleSelectionRowChange}
                                 onRowClick={handleRowClick}
                             />
+                            </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -322,7 +329,9 @@ export default function StudioPage() {
                             <DialogClose asChild>
                                 <Button variant="default" className='rounded bg-white text-black text-xs hover:bg-white/80'>Cancel</Button>
                             </DialogClose>
-                            <Button type="submit" className='rounded bg-[#9B1515] text-white text-xs hover:bg-[#9B1515]/80'>Delete</Button>
+                            <Button type="button" onClick={handleConfirmDelete} disabled={deleteLoading} className='rounded bg-[#9B1515] text-white text-xs hover:bg-[#9B1515]/80'>
+                                {deleteLoading ? "Deleting..." : "Delete"}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
