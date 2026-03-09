@@ -168,7 +168,8 @@ export default function QuestDetailPage() {
   const badgeLevel =
     metadata?.reward?.badgeLevel ?? Number(quest.badgeLevel ?? 1)
 
-  const bannerUri = metadata?.banner ?? ""
+  const campaignThumbnail = (quest as { campaignThumbnail?: string })?.campaignThumbnail
+  const bannerUri = (campaignThumbnail || metadata?.banner) ?? ""
   const bannerUrl = bannerUri.startsWith("ipfs://")
     ? ipfsToHttp(bannerUri)
     : bannerUri || ""

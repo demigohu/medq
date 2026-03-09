@@ -35,7 +35,17 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { DepositActivateDialog } from "@/components/deposit-activate-dialog";
 
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 const questSchema = z.object({
+  partnerName: z.string().optional(),
   title: z.string().min(1),
   description: z.string().min(1),
   periodStart: z.string(),
@@ -58,6 +68,7 @@ export default function EditQuestPage() {
   const [loading, setLoading] = useState(true);
   const [initialThumbnailUrl, setInitialThumbnailUrl] = useState<string | null>(null);
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [saveDraftStatus, setSaveDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const poolAmountForFee = campaign ? Number(campaign.pool_amount) || 0 : 0;
   const { balanceFormatted } = useCampaignBalance(campaign?.id ?? null);
@@ -66,6 +77,7 @@ export default function EditQuestPage() {
   const form = useForm<QuestFormValues>({
     resolver: zodResolver(questSchema),
     defaultValues: {
+      partnerName: "",
       title: "",
       description: "<p></p>",
       periodStart: "",
@@ -94,6 +106,7 @@ export default function EditQuestPage() {
         const rewardPerQuest = poolAmount / maxParticipants;
 
         reset({
+          partnerName: c.partner_name ?? "",
           title: c.title,
           description: c.description ?? "<p></p>",
           periodStart: c.start_at ?? "",
@@ -152,7 +165,39 @@ export default function EditQuestPage() {
   };
 
   const onSubmit = () => {};
-  const onSaveDraft = () => {};
+
+  const onSaveDraft = async (values: QuestFormValues) => {
+    if (!campaign) return;
+    setSaveDraftStatus("saving");
+    try {
+      const tokenPerWinner = Number(values.token_amount_per_winner) || 0;
+      const maxParticipants = Number(values.winners) || 0;
+      const poolAmt = tokenPerWinner * maxParticipants;
+      const files = values.thumbnail;
+      const file = files && (Array.isArray(files) ? files[0] : (files as FileList)?.[0]);
+      let thumbnail: string | null | undefined = undefined;
+      if (file instanceof File) {
+        thumbnail = await fileToBase64(file);
+      }
+      await api.updateCampaign(campaign.id, {
+        title: values.title,
+        description: values.description,
+        partner_name: values.partnerName?.trim() || null,
+        start_at: values.periodStart || undefined,
+        end_at: values.periodEnd || undefined,
+        pool_amount: poolAmt,
+        max_participants: maxParticipants,
+        pool_token: values.token,
+        ...(thumbnail != null && { thumbnail }),
+      });
+      setCampaign((prev) => (prev ? { ...prev, title: values.title, description: values.description ?? null, partner_name: values.partnerName?.trim() || null } : null));
+      setSaveDraftStatus("saved");
+      setTimeout(() => setSaveDraftStatus("idle"), 3000);
+    } catch {
+      setSaveDraftStatus("error");
+      setTimeout(() => setSaveDraftStatus("idle"), 3000);
+    }
+  };
 
   const goNext = () => {
     if (step === 0) setStep(1);
@@ -192,48 +237,8 @@ export default function EditQuestPage() {
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         {/* Deposit / Activate section for pending campaigns */}
         {campaign.status === "pending" && (
-          <div className="rounded border border-amber-500/30 bg-amber-500/5 p-6">
-            <h3 className="mb-2 font-semibold text-amber-500">Quest Activate — Deposit to Escrow</h3>
-            <p className="mb-4 text-sm text-zinc-400">
-              Fund your campaign pool. A 0.5% platform fee applies.
-            </p>
-            <div className="mb-4 rounded border border-[#1A1A1A] bg-black/40 p-4 space-y-2 max-w-md">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Pool amount (rewards)</span>
-                <span className="text-white">{poolAmount.toFixed(2)} USDC</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Platform fee (0.5%)</span>
-                <span className="text-white">{feeAmount.toFixed(2)} USDC</span>
-              </div>
-              <div className="flex justify-between text-sm font-medium border-t border-[#1A1A1A] pt-2 mt-2">
-                <span>Total to deposit</span>
-                <span className="text-emerald-400">{depositAmount.toFixed(2)} USDC</span>
-              </div>
-            </div>
-            {!isConnected ? (
-              <p className="text-sm text-amber-500">Connect your wallet to deposit.</p>
-            ) : (
-              <>
-                <Button
-                  onClick={() => setDepositDialogOpen(true)}
-                  disabled={hasEnoughBalance}
-                  className="rounded bg-[#48A111] text-white hover:bg-[#48A111]/80"
-                >
-                  {hasEnoughBalance ? "Deposited" : "Deposit USDC & Activate"}
-                </Button>
-                <DepositActivateDialog
-                  open={depositDialogOpen}
-                  onOpenChange={setDepositDialogOpen}
-                  campaignId={campaign.id}
-                  depositAmount={depositAmount}
-                  onSuccess={handleDepositSuccess}
-                />
-              </>
-            )}
-            {balanceFormatted != null && (
-              <p className="mt-2 text-xs text-zinc-500">Escrow balance: {balanceFormatted} USDC</p>
-            )}
+          <div className="rounded border border-amber-500/30 bg-amber-500/5 px-6 py-3">
+            <p className="font-medium text-amber-500">Campaign pending — complete deposit to activate</p>
           </div>
         )}
 
@@ -295,14 +300,23 @@ export default function EditQuestPage() {
                     : "Deposit USDC to escrow and activate your campaign."}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="default"
-              className="border border-[#1A1A1A] rounded bg-black/40 text-xs text-white"
-              onClick={handleSubmit(onSaveDraft)}
-            >
-              Save Draft
-            </Button>
+            <div className="flex items-center gap-2">
+              {saveDraftStatus === "saved" && (
+                <span className="text-xs text-emerald-500">Draft saved</span>
+              )}
+              {saveDraftStatus === "error" && (
+                <span className="text-xs text-red-500">Failed to save</span>
+              )}
+              <Button
+                type="button"
+                variant="default"
+                disabled={saveDraftStatus === "saving"}
+                className="border border-[#1A1A1A] rounded bg-black/40 text-xs text-white"
+                onClick={handleSubmit(onSaveDraft)}
+              >
+                {saveDraftStatus === "saving" ? "Saving..." : "Save Draft"}
+              </Button>
+            </div>
           </div>
 
           <form
@@ -359,6 +373,23 @@ export default function EditQuestPage() {
             ) : step === 0 ? (
               <section className="space-y-6">
                 <FieldGroup>
+                  {/* Partner name */}
+                  <Controller
+                    name="partnerName"
+                    control={control}
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>Partner name</FieldLabel>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="e.g. SaucerSwap, Bonzo Finance"
+                          className="bg-black/40 text-sm text-white placeholder:text-white/30 rounded border border-[#1A1A1A]"
+                        />
+                      </Field>
+                    )}
+                  />
+
                   {/* Title */}
                   <Controller
                     name="title"

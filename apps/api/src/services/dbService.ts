@@ -13,6 +13,7 @@ export interface User {
 export interface Campaign {
   id: string
   partner_wallet: string
+  partner_name?: string | null
   title: string
   status: string
   template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
@@ -659,11 +660,60 @@ export async function logAIGeneration(logData: {
   }
 }
 
+const PLACEHOLDER_PROTOCOL = "0x0000000000000000000000000000000000000000"
+
+/**
+ * Create a draft campaign (partial data, status draft)
+ */
+export async function createCampaignDraft(data: {
+  partner_wallet: string
+  partner_name?: string
+  title: string
+  template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
+  template_params?: Record<string, unknown>
+  pool_amount?: number
+  max_participants?: number
+  pool_token?: string
+  start_at?: string
+  end_at?: string
+  thumbnail?: string
+  description?: string
+}): Promise<Campaign> {
+  const templateParams = data.template_params ?? { protocol_address: PLACEHOLDER_PROTOCOL }
+  const protocolAddr = (templateParams as Record<string, unknown>).protocol_address ?? PLACEHOLDER_PROTOCOL
+  const poolAmount = data.pool_amount ?? 0
+  const maxParticipants = data.max_participants ?? 1
+  const rewardPerQuestUsdc = maxParticipants > 0 ? poolAmount / maxParticipants : 0
+  const { data: row, error } = await supabase
+    .from("campaigns")
+    .insert({
+      partner_wallet: data.partner_wallet.toLowerCase(),
+      partner_name: data.partner_name?.trim() || null,
+      title: data.title,
+      status: "draft",
+      template_type: data.template_type ?? "other",
+      template_params: { ...templateParams, protocol_address: String(protocolAddr) },
+      pool_token: data.pool_token ?? "USDC",
+      pool_amount: poolAmount,
+      max_participants: maxParticipants,
+      reward_per_quest_usdc: rewardPerQuestUsdc,
+      start_at: data.start_at ?? null,
+      end_at: data.end_at ?? null,
+      thumbnail: data.thumbnail ?? null,
+      description: data.description ?? null,
+    })
+    .select()
+    .single()
+  if (error || !row) throw new Error(`Failed to create draft: ${error?.message}`)
+  return row as Campaign
+}
+
 /**
  * Campaign CRUD
  */
 export async function createCampaign(campaign: {
   partner_wallet: string
+  partner_name?: string
   title: string
   template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
   template_params: Record<string, unknown>
@@ -682,6 +732,7 @@ export async function createCampaign(campaign: {
     .from("campaigns")
     .insert({
       partner_wallet: campaign.partner_wallet.toLowerCase(),
+      partner_name: campaign.partner_name?.trim() || null,
       title: campaign.title,
       status: "pending",
       template_type: campaign.template_type,
@@ -702,6 +753,11 @@ export async function createCampaign(campaign: {
     throw new Error(`Failed to create campaign: ${error?.message}`)
   }
   return data as Campaign
+}
+
+export async function deleteCampaign(id: string): Promise<void> {
+  const { error } = await supabase.from("campaigns").delete().eq("id", id)
+  if (error) throw new Error(`Failed to delete campaign: ${error.message}`)
 }
 
 export async function getCampaignById(id: string): Promise<Campaign | null> {
@@ -759,6 +815,40 @@ export async function updateCampaignStatus(
   if (extra?.medq_per_quest != null) updates.medq_per_quest = extra.medq_per_quest
   const { error } = await supabase.from("campaigns").update(updates).eq("id", id)
   if (error) throw new Error(`Failed to update campaign: ${error.message}`)
+}
+
+export type UpdateCampaignFields = {
+  title?: string
+  description?: string
+  partner_name?: string | null
+  start_at?: string
+  end_at?: string
+  pool_amount?: number
+  max_participants?: number
+  pool_token?: string
+  thumbnail?: string | null
+  template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
+  template_params?: Record<string, unknown>
+}
+
+export async function updateCampaign(id: string, fields: UpdateCampaignFields): Promise<Campaign> {
+  const camp = await getCampaignById(id)
+  if (!camp) throw new Error("Campaign not found")
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (fields.title != null) updates.title = fields.title
+  if (fields.description != null) updates.description = fields.description
+  if (fields.partner_name !== undefined) updates.partner_name = fields.partner_name?.trim() || null
+  if (fields.start_at != null) updates.start_at = fields.start_at || null
+  if (fields.end_at != null) updates.end_at = fields.end_at || null
+  if (fields.pool_amount != null) updates.pool_amount = fields.pool_amount
+  if (fields.max_participants != null) updates.max_participants = fields.max_participants
+  if (fields.pool_token != null) updates.pool_token = fields.pool_token
+  if (fields.thumbnail !== undefined) updates.thumbnail = fields.thumbnail || null
+  if (fields.template_type != null) updates.template_type = fields.template_type
+  if (fields.template_params != null) updates.template_params = fields.template_params
+  const { data, error } = await supabase.from("campaigns").update(updates).eq("id", id).select().single()
+  if (error) throw new Error(`Failed to update campaign: ${error.message}`)
+  return data as Campaign
 }
 
 export async function incrementCampaignParticipant(id: string): Promise<void> {

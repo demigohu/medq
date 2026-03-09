@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { getParticipantProgress, getQuestById } from "../services/questService"
-import { getLeaderboard, getUserStats, getOrCreateUser, saveProfile, updateAvatar } from "../services/dbService"
+import { getLeaderboard, getUserStats, getOrCreateUser, saveProfile, updateAvatar, getCampaignByQuestId, getCampaignParticipantByQuestId, getCampaignById } from "../services/dbService"
 import { generateInitialQuests, getUserActiveQuests } from "../services/dailyWeeklyQuestService"
 import { supabase } from "../lib/supabase"
 import type { OnChainReward } from "../services/rewardsService.js"
@@ -483,7 +483,17 @@ questsRouter.get("/:id", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid quest id" })
     }
     const quest = await getQuestById(questId)
-    return res.json({ quest })
+    let campaign = await getCampaignByQuestId(questId)
+    if (!campaign) {
+      const cp = await getCampaignParticipantByQuestId(questId)
+      if (cp) campaign = await getCampaignById(cp.campaign_id)
+    }
+    const payload: Record<string, unknown> = { ...quest }
+    const thumb = campaign?.thumbnail
+    if (thumb && typeof thumb === "string" && thumb.trim().length > 0) {
+      payload.campaignThumbnail = thumb.trim()
+    }
+    return res.json({ quest: payload })
   } catch (error) {
     next(error)
   }

@@ -251,7 +251,7 @@ export default function StudioPage() {
         if (!selectedQuest) return;
         setDeleteLoading(true);
         try {
-            await api.updateCampaignStatus(selectedQuest.id, "cancelled");
+            await api.deleteCampaign(selectedQuest.id);
             setQuestData((prev) => prev.filter((q) => q.id !== selectedQuest.id));
             setIsDeleteQuestDialogOpen(false);
             setSelectedQuest(null);

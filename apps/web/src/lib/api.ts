@@ -189,8 +189,29 @@ class APIClient {
     )
   }
 
+  async createCampaignDraft(data: {
+    partner_wallet: string
+    partner_name?: string
+    title: string
+    template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
+    template_params?: Record<string, unknown>
+    pool_amount?: number
+    max_participants?: number
+    pool_token?: string
+    description?: string
+    thumbnail?: string
+    period_start?: string
+    period_end?: string
+  }) {
+    return this.request<Campaign>(`/campaigns/draft`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
   async createCampaign(data: {
     partner_wallet: string
+    partner_name?: string
     title: string
     template_type: "swap" | "deposit" | "borrow" | "stake" | "other"
     description?: string
@@ -229,10 +250,42 @@ class APIClient {
     })
   }
 
+  async deleteCampaign(id: string) {
+    return fetch(`${this.baseURL}/campaigns/${id}`, {
+      method: "DELETE",
+    }).then(async (res) => {
+      if (res.status === 204) return
+      const err = (await res.json().catch(() => ({}))) as APIError
+      throw new Error(err.message || `HTTP ${res.status}`)
+    })
+  }
+
   async updateCampaignStatus(id: string, status: string) {
     return this.request<Campaign>(`/campaigns/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
+    })
+  }
+
+  async updateCampaign(
+    id: string,
+    data: {
+      title?: string
+      description?: string
+      partner_name?: string | null
+      start_at?: string
+      end_at?: string
+      pool_amount?: number
+      max_participants?: number
+      pool_token?: string
+      thumbnail?: string | null
+      template_type?: "swap" | "deposit" | "borrow" | "stake" | "other"
+      template_params?: Record<string, unknown>
+    }
+  ) {
+    return this.request<Campaign>(`/campaigns/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
     })
   }
 }
@@ -240,6 +293,7 @@ class APIClient {
 export interface Campaign {
   id: string
   partner_wallet: string
+  partner_name?: string | null
   title: string
   status: "draft" | "pending" | "active" | "completed" | "cancelled"
   template_type: "swap" | "deposit" | "borrow" | "stake" | "other"

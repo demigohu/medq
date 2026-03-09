@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Calendar as CalendarIcon, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, type Campaign } from "@/lib/api";
 import { useDepositAmountForPool } from "@/hooks/useCampaignEscrow";
 import {
@@ -38,6 +38,7 @@ import { DepositActivateDialog } from "@/components/deposit-activate-dialog";
 const questSchema = z
   .object({
     // Step 1
+    partnerName: z.string().optional(),
     title: z.string().min(1, "Title is required"),
     description: z
       .string()
@@ -55,17 +56,21 @@ const questSchema = z
       required_error: "Quest type is required",
     }),
     template_type_custom: z.string().optional(),
-    protocol_address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Protocol address is required (0x...40 hex)"),
-    token: z.string().min(1, "Token is required"),
-    token_amount_per_winner: z
+    protocol_address: z
       .string()
-      .min(1, "Token amount is required")
+      .min(1, "Protocol address is required")
+      .refine(
+        (v) => /^0x[a-fA-F0-9]{40}$/.test(v),
+        { message: "Protocol address must be 0x + exactly 40 hex characters (e.g. 0x0000000000000000000000000000000000004b40)" }
+      ),
+    token: z.string().min(1, "Token is required"),
+    token_amount_per_winner: z.union([z.string(), z.number()])
+      .refine((v) => v !== "" && v !== undefined && v !== null, "Token amount is required")
       .refine((v) => !Number.isNaN(Number(v)) && Number(v) > 0, {
         message: "Token amount must be a positive number",
       }),
-    winners: z
-      .string()
-      .min(1, "Number of winners is required")
+    winners: z.union([z.string(), z.number()])
+      .refine((v) => v !== "" && v !== undefined && v !== null, "Number of winners is required")
       .refine((v) => Number.isInteger(Number(v)) && Number(v) > 0, {
         message: "Winners must be a positive integer",
       }),
@@ -85,21 +90,47 @@ type QuestFormValues = z.infer<typeof questSchema>;
 
 const STEP_LABELS = ["Quest Info", "Rewards Info", "Quest Activate"] as const;
 
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getThumbnailForApi(values: QuestFormValues): Promise<string | undefined> {
+  const files = values.thumbnail;
+  const file = files && (Array.isArray(files) ? files[0] : (files as FileList)?.[0]);
+  if (file instanceof File) {
+    return fileToBase64(file);
+  }
+  const url = values.thumbnailUrl?.trim();
+  return Promise.resolve(url || undefined);
+}
+
 type ProtocolOption = { name: string; evmAddress: string; category: string };
 
 export default function CreateQuestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftIdFromUrl = searchParams?.get("draft");
   const { address, isConnected } = useAccount();
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [protocols, setProtocols] = useState<ProtocolOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [createdCampaign, setCreatedCampaign] = useState<Campaign | null>(null);
+  const [draftCampaignId, setDraftCampaignId] = useState<string | null>(draftIdFromUrl);
   const [error, setError] = useState<string | null>(null);
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [protocolIsOther, setProtocolIsOther] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const form = useForm<QuestFormValues>({
     resolver: zodResolver(questSchema),
+    shouldUnregister: false,
     defaultValues: {
+      partnerName: "",
       title: "",
       description: "<p>Quest description</p>",
       periodStart: "",
@@ -118,10 +149,15 @@ export default function CreateQuestPage() {
     control,
     register,
     handleSubmit,
+    getValues,
+    trigger,
     watch,
     setValue,
     formState: { errors },
   } = form;
+
+  const STEP_0_FIELDS: (keyof QuestFormValues)[] = ["title", "description", "periodStart", "periodEnd"];
+  const STEP_1_FIELDS: (keyof QuestFormValues)[] = ["template_type", "protocol_address", "token_amount_per_winner", "winners"];
 
   const tokenPerWinner = watch("token_amount_per_winner");
   const winners = watch("winners");
@@ -142,6 +178,31 @@ export default function CreateQuestPage() {
       );
     }).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    const id = draftIdFromUrl;
+    if (!id) return;
+    api
+      .getCampaign(id)
+      .then((c) => {
+        setValue("title", c.title);
+        setValue("description", c.description ?? "<p></p>");
+        setValue("partnerName", c.partner_name ?? "");
+        setValue("periodStart", c.start_at ?? "");
+        setValue("periodEnd", c.end_at ?? "");
+        setValue("thumbnailUrl", c.thumbnail ?? "");
+        if (c.template_type) setValue("template_type", c.template_type as QuestFormValues["template_type"]);
+        const tp = c.template_params as Record<string, unknown> | undefined;
+        if (tp?.protocol_address) setValue("protocol_address", String(tp.protocol_address));
+        setValue("token", (c.pool_token ?? "usdc").toLowerCase());
+        const pool = Number(c.pool_amount) || 0;
+        const maxP = c.max_participants || 1;
+        setValue("token_amount_per_winner", maxP > 0 ? String(pool / maxP) : "");
+        setValue("winners", String(maxP));
+        setDraftCampaignId(c.id);
+      })
+      .catch(() => {});
+  }, [draftIdFromUrl, setValue]);
 
   const previewUrl = useMemo(() => {
     if (thumbnailUrl?.trim()) return thumbnailUrl;
@@ -181,27 +242,48 @@ export default function CreateQuestPage() {
       const tokenPerWinner = Number(values.token_amount_per_winner);
       const maxParticipants = Number(values.winners);
       const poolAmt = tokenPerWinner * maxParticipants;
-      const thumbnail = values.thumbnailUrl?.trim() || undefined;
-
+      const thumbnail = await getThumbnailForApi(values);
       const templateParams: Record<string, unknown> = {
         protocol_address: values.protocol_address,
       };
       if (values.template_type === "other" && values.template_type_custom) {
         templateParams.custom_type = values.template_type_custom;
       }
-      const campaign = await api.createCampaign({
-        partner_wallet: address,
-        title: values.title,
-        template_type: values.template_type as "swap" | "deposit" | "borrow" | "stake" | "other",
-        template_params: templateParams,
-        description: values.description,
-        thumbnail: thumbnail || undefined,
-        pool_amount: poolAmt,
-        max_participants: maxParticipants,
-        period_start: values.periodStart,
-        period_end: values.periodEnd,
-      });
+
+      let campaign: Campaign;
+      if (draftCampaignId) {
+        await api.updateCampaign(draftCampaignId, {
+          title: values.title,
+          description: values.description,
+          partner_name: values.partnerName?.trim() || null,
+          start_at: values.periodStart,
+          end_at: values.periodEnd,
+          pool_amount: poolAmt,
+          max_participants: maxParticipants,
+          pool_token: values.token,
+          thumbnail: thumbnail || null,
+          template_type: values.template_type,
+          template_params: templateParams,
+        });
+        await api.updateCampaignStatus(draftCampaignId, "pending");
+        campaign = await api.getCampaign(draftCampaignId);
+      } else {
+        campaign = await api.createCampaign({
+          partner_wallet: address,
+          partner_name: values.partnerName?.trim() || undefined,
+          title: values.title,
+          template_type: values.template_type as "swap" | "deposit" | "borrow" | "stake" | "other",
+          template_params: templateParams,
+          description: values.description,
+          thumbnail: thumbnail || undefined,
+          pool_amount: poolAmt,
+          max_participants: maxParticipants,
+          period_start: values.periodStart,
+          period_end: values.periodEnd,
+        });
+      }
       setCreatedCampaign(campaign);
+      setDraftCampaignId(null);
       setStep(2);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create campaign");
@@ -215,13 +297,89 @@ export default function CreateQuestPage() {
     router.push(`/dashboard/studio/edit-quest/${createdCampaign?.id}`);
   };
 
-  const onSaveDraft = (_values: QuestFormValues) => {
-    setError("Draft save not implemented. Complete and publish to create.");
+  const onSaveDraft = async (values: QuestFormValues) => {
+    if (!isConnected || !address) {
+      setError("Connect your wallet to save draft");
+      return;
+    }
+    if (!values.title?.trim()) {
+      setError("Title is required to save draft");
+      return;
+    }
+    setError(null);
+    try {
+      const tokenPerWinner = Number(values.token_amount_per_winner) || 0;
+      const maxParticipants = Number(values.winners) || 1;
+      const poolAmt = tokenPerWinner * maxParticipants;
+      const thumbnail = await getThumbnailForApi(values);
+      const templateParams: Record<string, unknown> = values.protocol_address
+        ? { protocol_address: values.protocol_address, ...(values.template_type === "other" && values.template_type_custom && { custom_type: values.template_type_custom }) }
+        : {};
+
+      if (draftCampaignId) {
+        await api.updateCampaign(draftCampaignId, {
+          title: values.title,
+          description: values.description,
+          partner_name: values.partnerName?.trim() || null,
+          start_at: values.periodStart || undefined,
+          end_at: values.periodEnd || undefined,
+          pool_amount: poolAmt,
+          max_participants: maxParticipants,
+          pool_token: values.token,
+          thumbnail: thumbnail || null,
+          ...(Object.keys(templateParams).length > 0 && { template_type: values.template_type, template_params: templateParams }),
+        });
+      } else {
+        const c = await api.createCampaignDraft({
+          partner_wallet: address,
+          partner_name: values.partnerName?.trim() || undefined,
+          title: values.title,
+          description: values.description,
+          thumbnail,
+          period_start: values.periodStart || undefined,
+          period_end: values.periodEnd || undefined,
+          template_type: values.template_type,
+          template_params: Object.keys(templateParams).length > 0 ? templateParams : undefined,
+          pool_amount: poolAmt || undefined,
+          max_participants: maxParticipants > 0 ? maxParticipants : undefined,
+          pool_token: values.token,
+        });
+        setDraftCampaignId(c.id);
+      }
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 3000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save draft");
+    }
   };
 
-  const goNext = () => {
-    if (step === 0) setStep(1);
-    else if (step === 1) handleSubmit(onSubmit)();
+  const getValidationErrors = (errs: Record<string, unknown>): string => {
+    const messages: string[] = [];
+    for (const [key, val] of Object.entries(errs)) {
+      if (val && typeof val === "object" && "message" in val && typeof (val as { message?: unknown }).message === "string") {
+        messages.push(`${key}: ${(val as { message: string }).message}`);
+      }
+    }
+    return messages.length > 0 ? messages.join(" | ") : "Please fix the form errors.";
+  };
+
+  const goNext = async () => {
+    setError(null);
+    if (step === 0) {
+      const valid = await trigger(STEP_0_FIELDS);
+      if (valid) setStep(1);
+      else setError(getValidationErrors(form.formState.errors as Record<string, unknown>));
+    } else if (step === 1) {
+      const valid = await trigger(STEP_1_FIELDS);
+      if (valid) {
+        handleSubmit(
+          onSubmit,
+          (errs: Record<string, unknown>) => setError(getValidationErrors(errs))
+        )();
+      } else {
+        setError(getValidationErrors(form.formState.errors as Record<string, unknown>));
+      }
+    }
   };
 
   const goPrevious = () => {
@@ -278,22 +436,27 @@ export default function CreateQuestPage() {
                     : "Deposit USDC to escrow and activate your campaign."}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="default"
-              className="border border-[#1A1A1A] rounded bg-black/40 text-xs text-white"
-              onClick={handleSubmit(onSaveDraft)}
-            >
-              Save Draft
-            </Button>
+            <div className="flex items-center gap-2">
+              {draftSaved && (
+                <span className="text-xs text-emerald-500">Draft saved locally</span>
+              )}
+              <Button
+                type="button"
+                variant="default"
+                className="border border-[#1A1A1A] rounded bg-black/40 text-xs text-white"
+                onClick={() => onSaveDraft(getValues())}
+              >
+                Save Draft
+              </Button>
+            </div>
           </div>
 
           <form
             className="space-y-10 rounded border border-white/10 bg-linear-to-b from-zinc-950/80 to-black/80 p-6 shadow-xl"
             onSubmit={(e) => { e.preventDefault(); if (step === 1) handleSubmit(onSubmit)(e); }}
           >
-            {step === 2 ? (
-              <section className="space-y-6">
+            {/* Step 2 - Deposit: always in DOM, visibility by step */}
+            <section className={step === 2 ? "space-y-6" : "hidden"}>
                 <FieldGroup>
                   <h3 className="font-medium text-white">Deposit to Escrow</h3>
                   <p className="text-sm text-zinc-400">
@@ -338,10 +501,36 @@ export default function CreateQuestPage() {
                     </>
                   )}
                 </FieldGroup>
-              </section>
-            ) : step === 0 ? (
-              <section className="space-y-6">
+            </section>
+
+            {/* Step 0 - Quest Info: always in DOM */}
+            <section className={step === 0 ? "space-y-6" : "hidden"}>
                 <FieldGroup>
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
+                  {/* Partner name */}
+                  <Controller
+                    name="partnerName"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>
+                          Partner name <span className="text-red-500">*</span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          // value={field.value ?? ""}
+                          placeholder="e.g. SaucerSwap, Bonzo Finance"
+                          className="bg-black/40 text-sm text-white placeholder:text-white/30 rounded border border-[#1A1A1A]"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+
                   {/* Title */}
                   <Controller
                     name="title"
@@ -548,9 +737,10 @@ export default function CreateQuestPage() {
                     )}
                   />
                 </FieldGroup>
-              </section>
-            ) : (
-              <section className="space-y-6">
+            </section>
+
+            {/* Step 1 - Rewards Info: always in DOM */}
+            <section className={step === 1 ? "space-y-6" : "hidden"}>
                 <FieldGroup>
                   {error && (
                     <p className="text-sm text-red-500">{error}</p>
@@ -601,16 +791,28 @@ export default function CreateQuestPage() {
                         name="protocol_address"
                         control={control}
                         render={({ field, fieldState }) => {
-                          const isCustom = !protocols.some((p) => p.evmAddress === field.value);
-                          const selectValue = isCustom ? "other" : field.value;
+                          const val = (field.value || "").trim().toLowerCase();
+                          const matched = protocols.find((p) => p.evmAddress.toLowerCase() === val);
+                          const selectValue = protocolIsOther
+                            ? "other"
+                            : !val
+                              ? "__none__"
+                              : matched
+                                ? matched.evmAddress
+                                : "other";
                           return (
                             <Field data-invalid={fieldState.invalid}>
                               <Select
                                 value={selectValue}
                                 onValueChange={(v) => {
-                                  if (v === "other") {
+                                  if (v === "__none__" || v === "") {
+                                    setProtocolIsOther(false);
+                                    field.onChange("");
+                                  } else if (v === "other") {
+                                    setProtocolIsOther(true);
                                     field.onChange("");
                                   } else {
+                                    setProtocolIsOther(false);
                                     field.onChange(v);
                                   }
                                 }}
@@ -619,12 +821,15 @@ export default function CreateQuestPage() {
                                   <SelectValue placeholder="Select protocol" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="__none__">
+                                    <span className="text-zinc-500">Select protocol</span>
+                                  </SelectItem>
                                   {protocols.map((p) => (
                                     <SelectItem key={p.evmAddress} value={p.evmAddress}>
                                       {p.name} ({p.category})
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="other">Other</SelectItem>
+                                  <SelectItem value="other">Other (enter address manually)</SelectItem>
                                 </SelectContent>
                               </Select>
                               {selectValue === "other" && (
@@ -718,8 +923,7 @@ export default function CreateQuestPage() {
                   />
 
                 </FieldGroup>
-              </section>
-            )}
+            </section>
 
             {/* Footer actions */}
             <div className="flex items-center justify-between border-t border-white/10 pt-6">
@@ -737,7 +941,7 @@ export default function CreateQuestPage() {
                 <Button
                   type="button"
                   variant="default"
-                  onClick={goNext}
+                  onClick={() => goNext()}
                   className="text-white border border-[#1A1A1A] rounded bg-[#2845D6] hover:bg-[#2845D6]/80"
                 >
                   Next
@@ -747,7 +951,7 @@ export default function CreateQuestPage() {
                   type="button"
                   variant="default"
                   disabled={submitting}
-                  onClick={() => handleSubmit(onSubmit)()}
+                  onClick={() => goNext()}
                   className="text-white border border-[#1A1A1A] rounded bg-[#48A111] hover:bg-[#48A111]/80"
                 >
                   {submitting ? "Creating..." : "Next: Deposit & Activate"}
