@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -111,7 +111,7 @@ function getThumbnailForApi(values: QuestFormValues): Promise<string | undefined
 
 type ProtocolOption = { name: string; evmAddress: string; category: string };
 
-export default function CreateQuestPage() {
+function CreateQuestPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftIdFromUrl = searchParams?.get("draft");
@@ -964,5 +964,13 @@ export default function CreateQuestPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function CreateQuestPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0d0e13] flex items-center justify-center text-white">Loading...</div>}>
+      <CreateQuestPageContent />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useReadContract } from 'wagmi'
-import { QuestManager } from "../../contracts/abi/QuestManager"
+import { QuestManager } from "../lib/QuestManager"
 
 const QUEST_MANAGER_ADDRESS = (process.env.NEXT_PUBLIC_QUEST_MANAGER_ADDRESS ||
   "0x2BFA986A1e40f8F2C3a6B518a6DFD570A43905dF") as `0x${string}`

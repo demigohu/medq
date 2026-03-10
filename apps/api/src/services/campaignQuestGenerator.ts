@@ -14,6 +14,7 @@ const addressRegex = /^0x[a-fA-F0-9]{40}$/
 
 const campaignQuestOutputSchema = z.object({
   title: z.string(),
+  goal: z.string().describe("One-line goal matching the quest action, e.g. 'Deposit 10 USDC on Bonzo Finance' or 'Swap 10 USDC to Karate on SaucerSwap Finance'"),
   shortSummary: z.string(),
   recommendedCategory: z.enum(["swap", "liquidity", "stake", "lend"]),
   difficulty: z.enum(["easy", "medium", "hard"]),
@@ -56,6 +57,12 @@ Generate concrete, verifiable quests for partner campaigns. Return only valid JS
 Available protocols:
 - SaucerSwap Finance (0x0000000000000000000000000000000000004b40): DEX for swaps
 - Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending
+
+CRITICAL: Set "goal" to a one-line description that matches THIS specific quest (action type + protocol + amount). Examples:
+- Swap quest: "Swap 10 USDC to Karate on SaucerSwap Finance"
+- Deposit/supply quest: "Deposit 10 USDC on Bonzo Finance"
+- Borrow quest: "Borrow 100 HBAR from Bonzo Finance"
+Never use generic "Swap ? ? to ?" - use actual amounts and tokens from the campaign.
 
 Include verificationParams with minAmountTinybars when quest has minimum amount (1 HBAR = 100000000 tinybars).
 IMPORTANT: Set medqAmountPerQuest - the MEDQ reward per quest. Base it on: pool size (USDC), reward per quest (USDC), 
@@ -171,7 +178,6 @@ export async function generateQuestFromCampaign(
     logo: undefined,
   }
 
-  const goal = buildGoalFromTemplate(campaign, protocol.name)
   const protocolAddressToUse = getProtocolRouterAddress(protocolAddress)
 
   const questDraft = (await chain.invoke({
@@ -185,6 +191,10 @@ export async function generateQuestFromCampaign(
   const medqAmount = questDraft.medqAmountPerQuest ?? MEDQ_FALLBACK
   const verificationParams =
     questDraft.verificationParams ?? buildVerificationParamsFromTemplate(campaign)
+
+  const goal =
+    questDraft.goal?.trim() ||
+    buildGoalFromTemplate(campaign, protocol.name)
 
   const metadataPayload = {
     title: questDraft.title,
