@@ -1,7 +1,7 @@
 "use client"
 
 import type { LeaderboardEntry as LeaderboardEntryType } from "@/lib/types"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Crown, TrendingUp } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"

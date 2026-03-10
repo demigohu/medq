@@ -1,7 +1,7 @@
 "use client"
 
 import type { QuestStep } from "@/lib/types"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { CheckCircle2, Circle } from "lucide-react"
 
 interface QuestStepTrackerProps {

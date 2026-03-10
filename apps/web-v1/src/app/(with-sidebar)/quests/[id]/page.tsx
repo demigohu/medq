@@ -16,7 +16,7 @@ import { ArrowLeft, Users, Calendar, Zap, BookOpen, CheckCircle2, AlertCircle, W
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { formatUnits } from "viem"
 
 export default function QuestDetailPage() {

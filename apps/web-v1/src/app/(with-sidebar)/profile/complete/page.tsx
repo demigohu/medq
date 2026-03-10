@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Loader2, User, Mail, CheckCircle2, AlertCircle } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 
 export default function ProfileCompletePage() {
   const router = useRouter()
