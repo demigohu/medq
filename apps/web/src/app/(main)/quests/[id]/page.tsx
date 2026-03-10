@@ -27,6 +27,7 @@ import {
   fetchIPFSMetadata,
   type QuestMetadata,
 } from "@/lib/ipfs"
+import PartnershipCarousel from "@/components/partnership-carousel"
 import { formatUnits } from "viem"
 
 function formatCompact(n: number) {
@@ -580,19 +581,22 @@ export default function QuestDetailPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold md:text-2xl">
-            Explore more quests
-          </h2>
-          <Button
-            asChild
-            variant="outline"
-            className="rounded border-zinc-700 text-zinc-300 hover:bg-zinc-900 hover:text-white"
-          >
-            <Link href="/quests">
-              View all quests
-              <MoveRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-semibold md:text-2xl">
+              Explore more quests
+            </h2>
+            <Button
+              asChild
+              variant="outline"
+              className="rounded border-zinc-700 text-zinc-300 hover:bg-zinc-900 hover:text-white w-fit"
+            >
+              <Link href="/quests">
+                View all quests
+                <MoveRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <PartnershipCarousel showHeading={false} />
         </section>
       </div>
     </main>

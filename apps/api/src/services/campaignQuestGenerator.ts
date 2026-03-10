@@ -85,10 +85,26 @@ const groqModel = new ChatGroq({
 
 const chain = campaignQuestPrompt.pipe(groqModel).pipe(parser)
 
-/** Serialize campaign for AI context - pass all relevant data */
+/** Serialize campaign for AI context with a compact, curated subset of fields. */
 function buildCampaignContext(campaign: Campaign): string {
-  const { id, partner_wallet, status, escrow_address, escrow_tx_hash, participant_count, claimed_count, created_at, updated_at, metadata_uri, ...relevant } = campaign
-  return JSON.stringify(relevant, null, 2)
+  const minimal = {
+    title: campaign.title,
+    description: campaign.description,
+    partnerName: campaign.partner_name,
+    templateType: campaign.template_type,
+    templateParams: campaign.template_params,
+    poolToken: campaign.pool_token,
+    poolAmountUsdc: campaign.pool_amount,
+    rewardPerQuestUsdc: campaign.reward_per_quest_usdc,
+    maxParticipants: campaign.max_participants,
+    period: {
+      start_at: campaign.start_at,
+      end_at: campaign.end_at,
+    },
+  }
+
+  // Compact JSON (no pretty-print) to keep prompt size small.
+  return JSON.stringify(minimal)
 }
 
 function buildGoalFromTemplate(

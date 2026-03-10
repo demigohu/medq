@@ -69,10 +69,9 @@ export default function EditQuestPage() {
   const [initialThumbnailUrl, setInitialThumbnailUrl] = useState<string | null>(null);
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [saveDraftStatus, setSaveDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [publishLoading, setPublishLoading] = useState(false);
 
-  const poolAmountForFee = campaign ? Number(campaign.pool_amount) || 0 : 0;
   const { balanceFormatted } = useCampaignBalance(campaign?.id ?? null);
-  const { depositAmount, feeAmount } = useDepositAmountForPool(poolAmountForFee);
 
   const form = useForm<QuestFormValues>({
     resolver: zodResolver(questSchema),
@@ -92,6 +91,9 @@ export default function EditQuestPage() {
 
   const { control, handleSubmit, watch, setValue, reset } = form;
   const thumbnailFiles = watch("thumbnail");
+  const tokenPerWinner = watch("token_amount_per_winner");
+  const winners = watch("winners");
+  const formPoolAmount = (Number(tokenPerWinner) || 0) * (Number(winners) || 0);
 
   useEffect(() => {
     const id = params?.id;
@@ -155,13 +157,55 @@ export default function EditQuestPage() {
     }
   };
 
-  const poolAmount = campaign ? Number(campaign.pool_amount) || 0 : 0;
+  const campaignPoolAmount = campaign ? Number(campaign.pool_amount) || 0 : 0;
+  const poolAmount = Math.max(campaignPoolAmount, formPoolAmount);
+  const { depositAmount, feeAmount } = useDepositAmountForPool(poolAmount);
   const needsDeposit = campaign?.status === "pending" && poolAmount > 0;
-  const hasEnoughBalance = balanceFormatted != null && balanceFormatted >= poolAmount;
+  const hasEnoughBalance = poolAmount > 0 && balanceFormatted != null && balanceFormatted >= poolAmount;
+  const canDeposit = poolAmount > 0;
 
   const handleDepositSuccess = () => {
     setDepositDialogOpen(false);
     setCampaign((prev) => (prev ? { ...prev, status: "active" as const } : null));
+  };
+
+  const handlePublish = async (): Promise<boolean> => {
+    if (!campaign) return false;
+    const values = form.getValues();
+    const tokenPerWinner = Number(values.token_amount_per_winner) || 0;
+    const maxParticipants = Number(values.winners) || 0;
+    const poolAmt = tokenPerWinner * maxParticipants;
+    if (poolAmt <= 0) return false;
+    setPublishLoading(true);
+    try {
+      const files = values.thumbnail;
+      const file = files && (Array.isArray(files) ? files[0] : (files as FileList)?.[0]);
+      let thumbnail: string | null | undefined = undefined;
+      if (file instanceof File) {
+        thumbnail = await fileToBase64(file);
+      }
+      await api.updateCampaign(campaign.id, {
+        title: values.title,
+        description: values.description,
+        partner_name: values.partnerName?.trim() || null,
+        start_at: values.periodStart || undefined,
+        end_at: values.periodEnd || undefined,
+        pool_amount: poolAmt,
+        max_participants: maxParticipants,
+        pool_token: values.token,
+        ...(thumbnail != null && { thumbnail }),
+      });
+      await api.updateCampaignStatus(campaign.id, "pending");
+      const updated = await api.getCampaign(campaign.id);
+      setCampaign(updated);
+      return true;
+    } catch {
+      setSaveDraftStatus("error");
+      setTimeout(() => setSaveDraftStatus("idle"), 3000);
+      return false;
+    } finally {
+      setPublishLoading(false);
+    }
   };
 
   const onSubmit = () => {};
@@ -190,7 +234,7 @@ export default function EditQuestPage() {
         pool_token: values.token,
         ...(thumbnail != null && { thumbnail }),
       });
-      setCampaign((prev) => (prev ? { ...prev, title: values.title, description: values.description ?? null, partner_name: values.partnerName?.trim() || null } : null));
+      setCampaign((prev) => (prev ? { ...prev, title: values.title, description: values.description ?? null, partner_name: values.partnerName?.trim() || null, pool_amount: poolAmt, max_participants: maxParticipants } : null));
       setSaveDraftStatus("saved");
       setTimeout(() => setSaveDraftStatus("idle"), 3000);
     } catch {
@@ -344,17 +388,25 @@ export default function EditQuestPage() {
                       <span className="text-emerald-400">{depositAmount.toFixed(2)} USDC</span>
                     </div>
                   </div>
-                  {!isConnected ? (
+                  {!canDeposit ? (
+                    <p className="text-sm text-amber-500">Fill Rewards Info (Step 1), Save Draft, then return here to set pool amount.</p>
+                  ) : !isConnected ? (
                     <p className="text-sm text-amber-500">Connect your wallet to deposit.</p>
                   ) : (
                     <>
                       <Button
                         type="button"
-                        onClick={() => setDepositDialogOpen(true)}
-                        disabled={hasEnoughBalance}
+                        onClick={async () => {
+                          if (campaign.status === "draft") {
+                            const ok = await handlePublish();
+                            if (!ok) return;
+                          }
+                          setDepositDialogOpen(true);
+                        }}
+                        disabled={hasEnoughBalance || publishLoading}
                         className="rounded bg-[#48A111] text-white hover:bg-[#48A111]/80"
                       >
-                        {hasEnoughBalance ? "Deposited" : "Deposit USDC & Activate"}
+                        {publishLoading ? "Publishing..." : hasEnoughBalance ? "Deposited" : "Deposit USDC & Activate"}
                       </Button>
                       <DepositActivateDialog
                         open={depositDialogOpen}
@@ -366,7 +418,7 @@ export default function EditQuestPage() {
                     </>
                   )}
                   {balanceFormatted != null && (
-                    <p className="text-xs text-zinc-500">Escrow balance: {balanceFormatted} USDC</p>
+                    <p className="text-xs text-zinc-500">Escrow balance: {balanceFormatted.toFixed(2)} USDC</p>
                   )}
                 </FieldGroup>
               </section>

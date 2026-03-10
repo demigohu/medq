@@ -131,7 +131,7 @@ export function useCampaignEscrow() {
 /** Read campaign balance from escrow */
 export function useCampaignBalance(campaignId: string | null) {
   const campaignIdBytes = campaignId ? campaignIdToBytes32(campaignId) : undefined
-  const { data, error, isPending } = useReadContract({
+  const { data, error, isPending, refetch } = useReadContract({
     address: CAMPAIGN_ESCROW_ADDRESS,
     abi: CAMPAIGN_ESCROW_ABI,
     functionName: "campaignBalance",
@@ -142,6 +142,7 @@ export function useCampaignBalance(campaignId: string | null) {
     balanceFormatted: data != null ? Number(data) / 1e6 : null,
     error,
     isPending,
+    refetch,
   }
 }
 

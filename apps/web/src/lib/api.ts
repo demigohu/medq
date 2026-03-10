@@ -250,6 +250,17 @@ class APIClient {
     })
   }
 
+  async requestRefund(campaignId: string, partnerWallet: string) {
+    return this.request<{
+      message: string
+      transactionHash: string
+      amountUsdc: number
+    }>(`/campaigns/${campaignId}/refund`, {
+      method: "POST",
+      body: JSON.stringify({ partner_wallet: partnerWallet }),
+    })
+  }
+
   async deleteCampaign(id: string) {
     return fetch(`${this.baseURL}/campaigns/${id}`, {
       method: "DELETE",

@@ -283,11 +283,11 @@ export default function Home() {
                       STEP 02
                     </span>
                     <h3 className="text-sm font-semibold text-white">
-                      Submit Proof
+                      Automatic Verification
                     </h3>
                     <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                      Provide your transaction hash as proof of completion. Medq&apos;s
-                      engine validates your on-chain activity in real time.
+                      Once you complete the on-chain action, Medq automatically detects and
+                      verifies your transaction via Hedera Mirror Node—no manual submission needed.
                     </p>
                   </div>
                 </div>
@@ -305,11 +305,11 @@ export default function Home() {
                       STEP 03
                     </span>
                     <h3 className="text-sm font-semibold text-white">
-                      Claim Rewards
+                      Receive Rewards
                     </h3>
                     <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                      Once verified, instantly claim your MEDQ rewards and exclusive
-                      commemorative NFTs directly to your wallet.
+                      Once verified, rewards are sent directly to your wallet
+                      MEDQ, USDC (for partner quests), and exclusive commemorative NFTs.
                     </p>
                   </div>
                 </div>
@@ -429,9 +429,8 @@ export default function Home() {
                   </span>
                 </summary>
                 <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  Connect your wallet, pick any active campaign, and follow the on-chain
-                  instructions. Once your transaction is confirmed, submit the hash to let
-                  Medq verify your completion.
+                  Connect your wallet, Complete Profile to get daily and weekly quests, and follow the on-chain
+                  instructions. Once your transaction is confirmed, and verified, you will receive rewards.
                 </p>
               </details>
 

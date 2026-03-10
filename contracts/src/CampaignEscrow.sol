@@ -37,6 +37,7 @@ contract CampaignEscrow is Ownable {
     event FeeCollectorUpdated(address indexed newCollector);
     event Deposited(bytes32 indexed campaignId, address indexed depositor, uint256 amount, uint256 feeAmount);
     event Released(bytes32 indexed campaignId, address indexed recipient, uint256 amount);
+    event Refunded(bytes32 indexed campaignId, address indexed recipient, uint256 amount);
 
     /// @dev Hedera HTS precompile (HIP-206)
     address private constant HTS_PRECOMPILE = address(0x167);
@@ -153,6 +154,31 @@ contract CampaignEscrow is Ownable {
         rewardToken.safeTransfer(recipient, amount);
 
         emit Released(campaignId, recipient, amount);
+    }
+
+    /**
+     * @notice Refund excess pool to partner. Called by backend oracle after verifying refundable amount.
+     *         Refundable = balance - (participant_count - claimed_count) * reward_per_quest
+     * @param campaignId bytes32 - must match the campaign UUID hash used in deposit
+     * @param recipient Partner wallet to receive the refund
+     * @param amount Token amount to refund
+     */
+    function refundToPartner(bytes32 campaignId, address recipient, uint256 amount)
+        external
+        onlyRewardReleaser
+    {
+        if (address(rewardToken) == address(0)) revert CampaignEscrow__TokenNotConfigured();
+        if (amount == 0) revert CampaignEscrow__ZeroAmount();
+
+        uint256 available = _campaignBalances[campaignId];
+        if (amount > available) {
+            revert CampaignEscrow__InsufficientBalance(campaignId, amount, available);
+        }
+
+        _campaignBalances[campaignId] = available - amount;
+        rewardToken.safeTransfer(recipient, amount);
+
+        emit Refunded(campaignId, recipient, amount);
     }
 
     function campaignBalance(bytes32 campaignId) external view returns (uint256) {

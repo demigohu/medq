@@ -3,6 +3,7 @@
 import { DataTable } from '@/components/data-table';
 import { useAccount } from 'wagmi';
 import { api, type Campaign } from '@/lib/api';
+import { useCampaignBalance } from '@/hooks/useCampaignEscrow';
 import { CircleCheck, CircleDashed, Plus, Search, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -35,6 +36,7 @@ type QuestType = {
     thumbnail: string;
     status: string;
     participants: number;
+    claimed_count: number;
     period_start: string;
     period_end: string;
     network: string;
@@ -55,6 +57,7 @@ function campaignToQuestType(c: Campaign): QuestType {
         thumbnail: c.thumbnail ?? "https://picsum.photos/seed/quest/600/400",
         status: c.status === "active" ? "PUBLISHED" : "NOT_PUBLISHED",
         participants: c.participant_count ?? 0,
+        claimed_count: c.claimed_count ?? 0,
         period_start: c.start_at ?? "",
         period_end: c.end_at ?? "",
         network: "hedera",
@@ -96,6 +99,8 @@ export default function StudioPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const { balanceFormatted } = useCampaignBalance(selectedQuest?.id ?? null);
 
     const columns: ColumnDef<QuestType>[] = [
         {
@@ -244,23 +249,49 @@ export default function StudioPage() {
 
     const handleOpenDeleteEventDialog = useCallback((row: QuestType) => {
         setSelectedQuest(row);
+        setDeleteError(null);
         setIsDeleteQuestDialogOpen(true);
     }, []);
 
+    const participantCount = selectedQuest?.participants ?? 0;
+    const claimedCount = selectedQuest?.claimed_count ?? 0;
+    const rewardPerQuest = selectedQuest ? Number(selectedQuest.token_amount_per_winner ?? 0) : 0;
+    const remainingAllocated = Math.max(0, participantCount - claimedCount) * rewardPerQuest;
+    const refundableAmount =
+        balanceFormatted != null && remainingAllocated < balanceFormatted
+            ? balanceFormatted - remainingAllocated
+            : 0;
+    const isPartner =
+        address &&
+        selectedQuest?.partner_wallet &&
+        address.toLowerCase() === selectedQuest.partner_wallet.toLowerCase();
+    const canWithdraw =
+        isPartner &&
+        refundableAmount > 0.001;
+
     const handleConfirmDelete = useCallback(async () => {
         if (!selectedQuest) return;
+        setDeleteError(null);
         setDeleteLoading(true);
         try {
+            if (canWithdraw) {
+                await api.requestRefund(selectedQuest.id, selectedQuest.partner_wallet);
+            }
             await api.deleteCampaign(selectedQuest.id);
             setQuestData((prev) => prev.filter((q) => q.id !== selectedQuest.id));
             setIsDeleteQuestDialogOpen(false);
             setSelectedQuest(null);
         } catch (err) {
-            console.error("Failed to delete campaign:", err);
+            const msg = (err as Error)?.message ?? "Failed";
+            setDeleteError(
+                msg.includes("No refundable amount")
+                    ? "Refund failed: escrow balance not found. Ensure CAMPAIGN_ESCROW_ADDRESS in API matches the contract you deposited to. Do not delete—funds would be stuck."
+                    : msg
+            );
         } finally {
             setDeleteLoading(false);
         }
-    }, [selectedQuest]);
+    }, [selectedQuest, canWithdraw]);
 
     return (
         <>
@@ -274,7 +305,7 @@ export default function StudioPage() {
                                 </h1>
                                 <p className="text-sm text-zinc-400 max-w-2xl">
                                     Create and manage promotional quests for your project.
-                                    Reward users with tokens when they complete on-chain or social tasks.
+                                    Reward users with tokens when they complete on-chain.
                                 </p>
                             </div>
                             <Link href="/dashboard/studio/create-quest">
@@ -322,15 +353,34 @@ export default function StudioPage() {
                         <DialogHeader>
                             <DialogTitle>Delete selected quest?</DialogTitle>
                             <DialogDescription>
-                                You area about to permanently delete the selected news quest. This action cannot be undone.
+                                You are about to permanently delete the selected quest. This action cannot be undone.
+                                {canWithdraw && (
+                                    <span className="mt-2 block text-emerald-400">
+                                        {refundableAmount.toFixed(2)} USDC will be withdrawn to your wallet, then the campaign will be deleted.
+                                    </span>
+                                )}
                             </DialogDescription>
                         </DialogHeader>
+                        {deleteError && (
+                            <p className="text-sm text-amber-400 mt-2">{deleteError}</p>
+                        )}
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="default" className='rounded bg-white text-black text-xs hover:bg-white/80'>Cancel</Button>
+                                <Button variant="default" className="rounded bg-white text-black text-xs hover:bg-white/80">Cancel</Button>
                             </DialogClose>
-                            <Button type="button" onClick={handleConfirmDelete} disabled={deleteLoading} className='rounded bg-[#9B1515] text-white text-xs hover:bg-[#9B1515]/80'>
-                                {deleteLoading ? "Deleting..." : "Delete"}
+                            <Button
+                                type="button"
+                                onClick={handleConfirmDelete}
+                                disabled={deleteLoading}
+                                className="rounded bg-[#9B1515] text-white text-xs hover:bg-[#9B1515]/80"
+                            >
+                                {deleteLoading
+                                    ? canWithdraw
+                                        ? "Withdrawing & Deleting..."
+                                        : "Deleting..."
+                                    : canWithdraw
+                                        ? `Delete & Withdraw ${refundableAmount.toFixed(2)} USDC`
+                                        : "Delete"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

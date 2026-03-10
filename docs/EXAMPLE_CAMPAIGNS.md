@@ -14,7 +14,7 @@ Referensi data untuk membuat campaign di Studio. Isi form Create Quest sesuai co
 |-------|-------|
 | **Partner name** | SaucerSwap |
 | **Title** | Swap USDC on SaucerSwap |
-| **Description** | Complete a USDC swap on SaucerSwap Finance to earn USDC rewards. Connect wallet, navigate to SaucerSwap, and swap at least 1 USDC. |
+| **Description** | Complete a swap on SaucerSwap Finance to earn USDC rewards. Connect wallet, navigate to SaucerSwap, and swap at least 10 USDC to Karate. |
 | **Start date** | (pilih tanggal mulai) |
 | **End date** | (pilih tanggal akhir) |
 | **Quest type** | Swap |

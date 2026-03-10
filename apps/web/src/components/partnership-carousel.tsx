@@ -10,7 +10,12 @@ import { useCampaigns } from "@/hooks/useCampaigns";
 
 const DEFAULT_THUMBNAIL = "https://picsum.photos/seed/quest/600/400";
 
-export default function PartnershipCarousel() {
+interface PartnershipCarouselProps {
+  /** When false, hide the "Partnership Quests" heading (e.g. when nested under "Explore more quests") */
+  showHeading?: boolean
+}
+
+export default function PartnershipCarousel({ showHeading = true }: PartnershipCarouselProps) {
   const isTablet = useIsTablet();
   const { campaigns, loading } = useCampaigns({ status: "active", limit: 20 });
 
@@ -41,9 +46,11 @@ export default function PartnershipCarousel() {
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold md:text-2xl">Partnership Quests</h1>
-      </div>
+      {showHeading && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-semibold md:text-2xl">Partnership Quests</h1>
+        </div>
+      )}
 
       {loading ? (
         <div className="rounded border border-[#1A1A1A] bg-black py-12 text-center text-zinc-400">

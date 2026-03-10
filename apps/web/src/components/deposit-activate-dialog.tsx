@@ -102,6 +102,10 @@ export function DepositActivateDialog({
       await api.activateCampaign(campaignId, depositTxHash);
       setStepState("activate", { status: "completed" });
 
+      // Brief pause so React can render the checkmark before countdown
+      await new Promise((r) => setTimeout(r, 400));
+      // Keep dialog open 7s to show success, then close
+      await new Promise((r) => setTimeout(r, 7000));
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -143,6 +147,8 @@ export function DepositActivateDialog({
     return "Pending";
   };
 
+  const allCompleted = STEPS.every((s) => (steps[s.id]?.status ?? "pending") === "completed");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -151,7 +157,7 @@ export function DepositActivateDialog({
       >
         <DialogHeader>
           <DialogTitle className="text-lg text-white">
-            Depositing USDC...
+            {allCompleted ? "Campaign activated!" : "Depositing USDC..."}
           </DialogTitle>
         </DialogHeader>
         <div className="mt-2">
@@ -160,7 +166,7 @@ export function DepositActivateDialog({
               <thead>
                 <tr className="border-b border-[#1A1A1A] bg-white/5">
                   <th className="px-4 py-3 text-left font-medium text-white/70">
-                    Contract Info
+                    Tx Hash
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-white/70">
                     Description

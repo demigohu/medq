@@ -615,13 +615,13 @@ export default function LeaderboardPage() {
                             <div className="text-sm font-semibold text-white">
                                 FULL LEADERBOARD
                             </div>
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                            {/* <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                                 Season 3 • All network players
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
-                    <CurrentUserRow />
+                    {/* <CurrentUserRow /> */}
 
                     <LeaderboardTable rows={leaderboardRows} />
                 </section>

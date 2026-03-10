@@ -11,6 +11,7 @@ import {
   updateCampaignStatus,
 } from "../services/dbService"
 import { joinCampaign, activateCampaign } from "../services/campaignService"
+import { getCampaignBalance, refundToPartnerRaw } from "../services/campaignEscrowService"
 
 export const campaignsRouter: Router = Router()
 
@@ -49,6 +50,10 @@ const createDraftSchema = z.object({
 
 const joinCampaignSchema = z.object({
   participant: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+})
+
+const refundSchema = z.object({
+  partner_wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
 })
 
 /**
@@ -174,6 +179,54 @@ campaignsRouter.post("/:id/join", async (req, res, next) => {
       message: "Campaign joined. Quest created.",
       questIdOnChain: result.questIdOnChain,
       deploymentTxHash: result.deploymentTxHash,
+    })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid input", errors: error.issues })
+    }
+    next(error)
+  }
+})
+
+/**
+ * POST /campaigns/:id/refund
+ * Partner withdraws excess pool. Refundable = balance - (participant_count - claimed_count) * reward_per_quest_usdc
+ */
+campaignsRouter.post("/:id/refund", async (req, res, next) => {
+  try {
+    const parsed = refundSchema.parse(req.body)
+    const campaign = await getCampaignById(req.params.id)
+    if (!campaign) {
+      return res.status(404).json({ message: "Campaign not found" })
+    }
+    if (parsed.partner_wallet.toLowerCase() !== campaign.partner_wallet?.toLowerCase()) {
+      return res.status(403).json({ message: "Only campaign partner can request refund" })
+    }
+
+    const balance = await getCampaignBalance(campaign.id)
+    const participantCount = campaign.participant_count ?? 0
+    const claimedCount = campaign.claimed_count ?? 0
+    const rewardPerQuest = Number(campaign.reward_per_quest_usdc ?? 0)
+    const remainingAllocatedRaw = BigInt(
+      Math.floor((participantCount - claimedCount) * rewardPerQuest * 1e6)
+    )
+    const refundableRaw = balance > remainingAllocatedRaw ? balance - remainingAllocatedRaw : 0n
+
+    if (refundableRaw === 0n) {
+      const balanceUsdc = Number(balance) / 1e6
+      const remainingUsdc = (participantCount - claimedCount) * rewardPerQuest
+      return res.status(400).json({
+        message: `No refundable amount. Escrow balance: ${balanceUsdc} USDC, allocated for participants: ${remainingUsdc} USDC. If you deposited but balance is 0, check CAMPAIGN_ESCROW_ADDRESS matches the contract you used.`,
+        balance: balanceUsdc,
+        remainingAllocated: remainingUsdc,
+      })
+    }
+
+    const txHash = await refundToPartnerRaw(campaign.id, parsed.partner_wallet, refundableRaw)
+    return res.json({
+      message: "Refund executed",
+      transactionHash: txHash,
+      amountUsdc: Number(refundableRaw) / 1e6,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
