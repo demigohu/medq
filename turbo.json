@@ -3,7 +3,39 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "web#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_QUEST_MANAGER_ADDRESS",
+        "NEXT_PUBLIC_REOWN_PROJECT_ID",
+        "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+        "NEXT_PUBLIC_MEDQ_TOKEN_ADDRESS",
+        "NEXT_PUBLIC_BADGE_NFT_ADDRESS",
+        "NEXT_PUBLIC_CAMPAIGN_ESCROW_ADDRESS",
+        "NEXT_PUBLIC_USDC_ADDRESS",
+        "NEXT_PUBLIC_IPFS_GATEWAY",
+        "NEXT_PUBLIC_APP_URL"
+      ]
+    },
+    "web-v1#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_QUEST_MANAGER_ADDRESS",
+        "NEXT_PUBLIC_REOWN_PROJECT_ID",
+        "NEXT_PUBLIC_MEDQ_TOKEN_ADDRESS",
+        "NEXT_PUBLIC_BADGE_NFT_ADDRESS",
+        "NEXT_PUBLIC_REWARD_VAULT_ADDRESS",
+        "NEXT_PUBLIC_CAMPAIGN_ESCROW_ADDRESS",
+        "NEXT_PUBLIC_USDC_ADDRESS",
+        "NEXT_PUBLIC_IPFS_GATEWAY",
+        "NEXT_PUBLIC_APP_URL"
+      ]
     },
     "dev": {
       "cache": false,

@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=web-v1",
+  "ignoreCommand": "npx turbo-ignore web-v1 --fallback=HEAD^1"
+}
