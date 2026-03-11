@@ -164,9 +164,8 @@ export default function ProfilePage() {
               onSuccess={refetch}
             >
               <Button
-                variant="outline"
-                size="sm"
-                className="rounded border-zinc-700 text-zinc-300 hover:bg-white/5"
+                variant="default"
+                className="rounded w-full font-semibold bg-white text-black hover:bg-white/80"
               >
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Profile
@@ -287,15 +286,15 @@ export default function ProfilePage() {
         <section className="flex gap-3">
           <Button
             asChild
-            variant="outline"
-            className="rounded border-zinc-700 text-zinc-300 hover:bg-white/5"
+            variant="default"
+            className="rounded font-semibold bg-white text-black hover:bg-white/80"
           >
             <Link href="/quests">View Quests</Link>
           </Button>
           <Button
             asChild
-            variant="outline"
-            className="rounded border-zinc-700 text-zinc-300 hover:bg-white/5"
+            variant="default"
+            className="rounded font-semibold bg-white text-black hover:bg-white/80"
           >
             <Link href="/leaderboard">View Leaderboard</Link>
           </Button>

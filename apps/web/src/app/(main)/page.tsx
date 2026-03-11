@@ -16,6 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
 import { TypeAnimation } from "react-type-animation";
+import PartnershipCarousel from "@/components/partnership-carousel";
 // import TextType from "@/components/ui/TextType";
 // import dynamic from "next/dynamic";
 
@@ -329,8 +330,12 @@ export default function Home() {
               </p>
             </div>
 
+            <div>
+              <PartnershipCarousel showHeading={false} />
+            </div>
+
             {/* Cards grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4">
+            {/* <div className="grid md:grid-cols-2 lg:grid-cols-4">
               {activeCampaigns.map((campaign) => (
                 <div
                   key={campaign.id}
@@ -377,9 +382,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* <button className="mt-5 inline-flex h-9 w-full items-center justify-center rounded-full bg-white text-[11px] font-semibold tracking-[0.16em] text-black hover:bg-zinc-200">
-                    JOIN QUEST &rarr;
-                  </button> */}
                   <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
                     <Link href={`/quests/${campaign.id}`}>
                       Join Quest
@@ -388,7 +390,7 @@ export default function Home() {
                   </Button>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
         </section>
 

@@ -19,7 +19,7 @@ const matemasie = Matemasie({
 });
 
 export const metadata: Metadata = {
-  title: "Medq",
+  title: "Medq - Ultimate DeFi Quest Platform",
   description: "Complete quests, earn rewards, and grow your on-chain health reputation.",
 };
 

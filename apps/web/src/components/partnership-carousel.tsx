@@ -19,7 +19,7 @@ export default function PartnershipCarousel({ showHeading = true }: PartnershipC
   const isTablet = useIsTablet();
   const { campaigns, loading } = useCampaigns({ status: "active", limit: 20 });
 
-  const CARDS_PER_SLIDE = isTablet ? 1 : 3;
+  const CARDS_PER_SLIDE = showHeading ? (isTablet ? 1 : 3) : (isTablet ? 1 : 2);
   const cards = campaigns.map((c) => ({
     id: c.id,
     imageSrc: c.thumbnail ?? DEFAULT_THUMBNAIL,
@@ -63,7 +63,7 @@ export default function PartnershipCarousel({ showHeading = true }: PartnershipC
       ) : (
         <div className="relative">
           {/* Track */}
-          <div className="overflow-hidden gap-4 py-4 rounded border border-[#1A1A1A] bg-black">
+          <div className={`overflow-hidden gap-4 py-4 rounded ${showHeading ? "border border-[#1A1A1A]" : "border-b border-[#1A1A1A]"} bg-black`}>
             <div
               className="flex transition-transform duration-500 ease-out"
               style={{
@@ -73,7 +73,7 @@ export default function PartnershipCarousel({ showHeading = true }: PartnershipC
               {cards.map((card) => (
                 <article
                   key={card.id}
-                  className="w-full shrink-0 px-2 lg:w-1/3"
+                  className={`w-full shrink-0 px-2 ${showHeading ? "lg:w-1/3" : "lg:w-1/2"}`}
                 >
                   <div className="flex h-full flex-col justify-between rounded border border-[#1A1A1A] bg-[#18181B] px-6 py-6">
                     <div className="relative h-48 w-full overflow-hidden rounded">

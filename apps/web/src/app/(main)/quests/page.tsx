@@ -11,47 +11,47 @@ import { useCampaigns } from "@/hooks/useCampaigns";
 
 /** Format seconds until expiry as "Xd Xh" or "Xh Xm" etc */
 function formatResetCountdown(expiryTimestamp: number | undefined | null): string {
-  if (!expiryTimestamp || typeof expiryTimestamp !== "number") return "—";
-  const now = Math.floor(Date.now() / 1000);
-  let sec = expiryTimestamp - now;
-  if (sec <= 0) return "Resetting...";
-  const d = Math.floor(sec / 86400);
-  const h = Math.floor((sec % 86400) / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+    if (!expiryTimestamp || typeof expiryTimestamp !== "number") return "—";
+    const now = Math.floor(Date.now() / 1000);
+    let sec = expiryTimestamp - now;
+    if (sec <= 0) return "Resetting...";
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
 }
 
 const CATEGORY_STYLE: Record<string, { code: string; codeBg: string; codeText: string; bonusDot: string }> = {
-  swap: { code: "SW", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-sky-400" },
-  liquidity: { code: "LP", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-emerald-400" },
-  stake: { code: "ST", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-indigo-400" },
-  lend: { code: "L", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-sky-400" },
+    swap: { code: "SW", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-sky-400" },
+    liquidity: { code: "LP", codeBg: "bg-sky-500/15", codeText: "text-sky-400", bonusDot: "bg-emerald-400" },
+    stake: { code: "ST", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-indigo-400" },
+    lend: { code: "L", codeBg: "bg-indigo-500/15", codeText: "text-indigo-400", bonusDot: "bg-sky-400" },
 };
 
 function mapQuestToCard(q: Record<string, unknown>, idx: number) {
-  const cat = String(q.category || "swap").toLowerCase();
-  const style = CATEGORY_STYLE[cat] || CATEGORY_STYLE.swap;
-  const reward = q.reward_per_participant ? `${Number(q.reward_per_participant)} MEDQ` : "— MEDQ";
-  return {
-    id: String(q.quest_id_on_chain ?? q.id ?? idx),
-    code: style.code,
-    codeBg: style.codeBg,
-    codeText: style.codeText,
-    title: String(q.title || "Quest"),
-    description: String(q.description || ""),
-    reward,
-    bonusDot: style.bonusDot,
-    bonusLabel: "Badge NFT",
-  };
+    const cat = String(q.category || "swap").toLowerCase();
+    const style = CATEGORY_STYLE[cat] || CATEGORY_STYLE.swap;
+    const reward = q.reward_per_participant ? `${Number(q.reward_per_participant)} MEDQ` : "— MEDQ";
+    return {
+        id: String(q.quest_id_on_chain ?? q.id ?? idx),
+        code: style.code,
+        codeBg: style.codeBg,
+        codeText: style.codeText,
+        title: String(q.title || "Quest"),
+        description: String(q.description || ""),
+        reward,
+        bonusDot: style.bonusDot,
+        bonusLabel: "Badge NFT",
+    };
 }
 
 export default function QuestsPage() {
     const [, setTick] = useState(0);
     useEffect(() => {
-      const id = setInterval(() => setTick((t) => t + 1), 60_000);
-      return () => clearInterval(id);
+        const id = setInterval(() => setTick((t) => t + 1), 60_000);
+        return () => clearInterval(id);
     }, []);
     const { address, isConnected } = useWallet();
     const { quests: userQuests } = useUserQuests(isConnected ? address : null);
@@ -90,179 +90,162 @@ export default function QuestsPage() {
                 {/* Partnership Quests as carousel */}
                 <PartnershipCarousel />
 
-                {/* Daily Quests */}
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs">
-                            <h2 className="text-base font-semibold md:text-lg">Daily Quests</h2>
-                            <span className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-                                Reset in {formatResetCountdown(dailyExpiry)}
-                            </span>
+                <div className="grid gap-4 md:grid-cols-2">
+                    {/* Daily Quests */}
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-xs">
+                                <h2 className="text-base font-semibold md:text-lg">Daily Quests</h2>
+                                <span className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+                                    Reset in {formatResetCountdown(dailyExpiry)}
+                                </span>
+                            </div>
                         </div>
 
-                        {/* <button className="flex items-center gap-1 text-[11px] font-semibold tracking-[0.16em] text-zinc-400 hover:text-white">
-                            View All <span>→</span>
-                        </button> */}
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-4">
-                        {!isConnected ? (
-                            <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
-                                Connect your wallet to see your daily quests.
-                            </div>
-                        ) : dailyQuests.length === 0 ? (
-                            <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
-                                No daily quest assigned. Complete your profile to get one.
-                            </div>
-                        ) : (
-                        dailyQuests.map((quest) => (
-                            <div
-                                key={quest.id}
-                                className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"
-                            >
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                                        <div className="inline-flex items-center gap-2">
-                                            <span
-                                                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${quest.codeBg} ${quest.codeText}`}
-                                            >
-                                                {quest.code}
-                                            </span>
-                                        </div>
-                                        <span className="rounded border border-zinc-700 px-2 py-0.5">
-                                            ID: {quest.id}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-sm font-semibold text-white">
-                                            {quest.title}
-                                        </h3>
-                                        <p className="text-xs leading-relaxed text-zinc-400">
-                                            {quest.description}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-4 space-y-2 text-[11px]">
-                                        <div className="flex items-center justify-between text-zinc-500">
-                                            <span>REWARD</span>
-                                            <span className="text-xs font-semibold text-white">
-                                                {quest.reward}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-zinc-500">
-                                            <span>BONUS</span>
-                                            <span className="inline-flex items-center gap-1 text-xs text-white">
-                                                <span
-                                                    className={`h-1.5 w-1.5 rounded-full ${quest.bonusDot}`}
-                                                />
-                                                {quest.bonusLabel}
-                                            </span>
-                                        </div>
-                                    </div>
+                        <div>
+                            {!isConnected ? (
+                                <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
+                                    Connect your wallet to see your daily quests.
                                 </div>
+                            ) : dailyQuests.length === 0 ? (
+                                <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
+                                    No daily quest assigned. Complete your profile to get one.
+                                </div>
+                            ) : (
+                                dailyQuests.map((quest) => (
+                                    <div
+                                        key={quest.id}
+                                        className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"
+                                    >
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between text-[10px] text-zinc-500">
+                                                <div className="inline-flex items-center gap-2">
+                                                    <span
+                                                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${quest.codeBg} ${quest.codeText}`}
+                                                    >
+                                                        {quest.code}
+                                                    </span>
+                                                </div>
+                                                <span className="rounded border border-zinc-700 px-2 py-0.5">
+                                                    ID: {quest.id}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-sm font-semibold text-white">
+                                                    {quest.title}
+                                                </h3>
+                                                <p className="text-xs leading-relaxed text-zinc-400">
+                                                    {quest.description}
+                                                </p>
+                                            </div>
 
-                                {/* <button className="mt-5 inline-flex h-9 w-full items-center justify-center rounded bg-white text-[11px] font-semibold tracking-[0.16em] text-black hover:bg-zinc-200">
-                                    JOIN QUEST &rarr;
-                                </button> */}
-                                <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
-                                    <Link href={`/quests/${quest.id}`}>
-                                        Continue Quest
-                                        <MoveRight className="w-4 h-4" />
-                                    </Link>
-                                </Button>
+                                            <div className="mt-4 space-y-2 text-[11px]">
+                                                <div className="flex items-center justify-between text-zinc-500">
+                                                    <span>REWARD</span>
+                                                    <span className="text-xs font-semibold text-white">
+                                                        {quest.reward}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-zinc-500">
+                                                    <span>BONUS</span>
+                                                    <span className="inline-flex items-center gap-1 text-xs text-white">
+                                                        <span
+                                                            className={`h-1.5 w-1.5 rounded-full ${quest.bonusDot}`}
+                                                        />
+                                                        {quest.bonusLabel}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
+                                            <Link href={`/quests/${quest.id}`}>
+                                                Continue Quest
+                                                <MoveRight className="w-4 h-4" />
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                )))}
+                        </div>
+                    </section>
+
+                    {/* Weekly Quests */}
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-xs">
+                                <h2 className="text-base font-semibold md:text-lg">Weekly Quests</h2>
+                                <span className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+                                    Reset in {formatResetCountdown(weeklyExpiry)}
+                                </span>
                             </div>
-                        )))}
-                    </div>
-                </section>
-
-                {/* Weekly Quests */}
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs">
-                            <h2 className="text-base font-semibold md:text-lg">Weekly Quests</h2>
-                            <span className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-                                Reset in {formatResetCountdown(weeklyExpiry)}
-                            </span>
                         </div>
 
-                        {/* <div className="flex items-center gap-4 text-[11px] text-zinc-500">
-                            <button className="border-b border-white pb-0.5 text-white">
-                                All Quests
-                            </button>
-                            <button>Governance</button>
-                            <button>Liquidity</button>
-                        </div> */}
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {!isConnected ? (
-                            <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
-                                Connect your wallet to see your weekly quests.
-                            </div>
-                        ) : weeklyQuests.length === 0 ? (
-                            <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
-                                No weekly quest assigned. Complete your profile to get one.
-                            </div>
-                        ) : (
-                        weeklyQuests.map((quest) => (
-                            <div
-                                key={quest.id}
-                                className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"
-                            >
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                                        <div className="inline-flex items-center gap-2">
-                                            <span
-                                                className={`flex h-7 w-7 items-center justify-center rounded text-xs ${quest.codeBg} ${quest.codeText}`}
-                                            >
-                                                {quest.code}
-                                            </span>
-                                        </div>
-                                        <span className="rounded border border-zinc-700 px-2 py-0.5">
-                                            ID: {quest.id}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-sm font-semibold text-white">
-                                            {quest.title}
-                                        </h3>
-                                        <p className="text-xs leading-relaxed text-zinc-400">
-                                            {quest.description}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-4 space-y-2 text-[11px]">
-                                        <div className="flex items-center justify-between text-zinc-500">
-                                            <span>REWARD</span>
-                                            <span className="text-xs font-semibold text-white">
-                                                {quest.reward}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-zinc-500">
-                                            <span>BONUS</span>
-                                            <span className="inline-flex items-center gap-1 text-xs text-white">
-                                                <span
-                                                    className={`h-1.5 w-1.5 rounded-full ${quest.bonusDot}`}
-                                                />
-                                                {quest.bonusLabel}
-                                            </span>
-                                        </div>
-                                    </div>
+                        <div>
+                            {!isConnected ? (
+                                <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
+                                    Connect your wallet to see your weekly quests.
                                 </div>
+                            ) : weeklyQuests.length === 0 ? (
+                                <div className="col-span-full rounded border border-[#1A1A1A] bg-black/40 py-12 text-center text-zinc-500">
+                                    No weekly quest assigned. Complete your profile to get one.
+                                </div>
+                            ) : (
+                                weeklyQuests.map((quest) => (
+                                    <div
+                                        key={quest.id}
+                                        className="flex h-full flex-col justify-between p-6 border border-[#1A1A1A] rounded"
+                                    >
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between text-[10px] text-zinc-500">
+                                                <div className="inline-flex items-center gap-2">
+                                                    <span
+                                                        className={`flex h-7 w-7 items-center justify-center rounded text-xs ${quest.codeBg} ${quest.codeText}`}
+                                                    >
+                                                        {quest.code}
+                                                    </span>
+                                                </div>
+                                                <span className="rounded border border-zinc-700 px-2 py-0.5">
+                                                    ID: {quest.id}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-sm font-semibold text-white">
+                                                    {quest.title}
+                                                </h3>
+                                                <p className="text-xs leading-relaxed text-zinc-400">
+                                                    {quest.description}
+                                                </p>
+                                            </div>
 
-                                {/* <button className="mt-5 inline-flex h-9 w-full items-center justify-center rounded bg-white text-[11px] font-semibold tracking-[0.16em] text-black hover:bg-zinc-200">
-                                    JOIN QUEST &rarr;
-                                </button> */}
-                                <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
-                                    <Link href={`/quests/${quest.id}`}>
-                                        Continue Quest
-                                        <MoveRight className="w-4 h-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        )))}
-                    </div>
-                </section>
+                                            <div className="mt-4 space-y-2 text-[11px]">
+                                                <div className="flex items-center justify-between text-zinc-500">
+                                                    <span>REWARD</span>
+                                                    <span className="text-xs font-semibold text-white">
+                                                        {quest.reward}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-zinc-500">
+                                                    <span>BONUS</span>
+                                                    <span className="inline-flex items-center gap-1 text-xs text-white">
+                                                        <span
+                                                            className={`h-1.5 w-1.5 rounded-full ${quest.bonusDot}`}
+                                                        />
+                                                        {quest.bonusLabel}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button asChild variant="default" className="rounded mt-5 font-semibold bg-white text-black hover:bg-white/80">
+                                            <Link href={`/quests/${quest.id}`}>
+                                                Continue Quest
+                                                <MoveRight className="w-4 h-4" />
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                )))}
+                        </div>
+                    </section>
+                </div>
 
                 {/* Campaign Quests - only quests user has joined */}
                 <section className="space-y-4">

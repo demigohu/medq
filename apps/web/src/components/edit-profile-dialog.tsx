@@ -128,17 +128,18 @@ export function EditProfileDialog({
           <div className="flex gap-2 pt-2">
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="flex-1 rounded border-zinc-700 text-zinc-300"
+              className="flex-1 rounded font-semibold bg-white text-black hover:bg-white/80"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              variant="default"
               disabled={loading}
-              className="flex-1 rounded bg-white text-black hover:bg-white/90"
+              className="flex-1 rounded font-semibold bg-white text-black hover:bg-white/80"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

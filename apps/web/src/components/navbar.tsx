@@ -80,7 +80,7 @@ export default function Navbar() {
     <>
       {isTablet ? (
         <header
-          className={cn(`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${pathname === "/" ? "bg-transparent" : "bg-black"}`)}
+          className={cn(`fixed inset-x-0 top-0 z-10 transition-colors duration-300 ${pathname === "/" ? "bg-transparent" : "bg-black"}`)}
         >
           <div className="mx-auto flex flex-col items-center justify-between px-5 md:px-10 py-5">
             {/* Left: Brand */}
@@ -170,7 +170,7 @@ export default function Navbar() {
         </header>
       ) : (
         <header
-          className={cn(`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${pathname === "/" ? "bg-transparent" : "bg-black"}`)}
+          className={cn(`fixed inset-x-0 top-0 z-10 transition-colors duration-300 ${pathname === "/" ? "bg-transparent" : "bg-black"}`)}
         >
           <div className="mx-auto flex items-center justify-between px-5 md:px-10 py-5">
             {/* Left: Brand */}

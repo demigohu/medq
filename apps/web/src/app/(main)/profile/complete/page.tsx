@@ -19,6 +19,26 @@ export default function ProfileCompletePage() {
   const [success, setSuccess] = useState(false)
   const [checking, setChecking] = useState(true)
 
+  // Disable body scroll while on this page
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    const prevPaddingRight = document.body.style.paddingRight
+
+    // Prevent layout shift when scrollbar disappears (desktop)
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth
+
+    document.body.style.overflow = "hidden"
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.body.style.paddingRight = prevPaddingRight
+    }
+  }, [])
+
   // Check if profile already complete
   useEffect(() => {
     if (!isConnected || !address) {
@@ -79,7 +99,7 @@ export default function ProfileCompletePage() {
 
   if (!isConnected || !address) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24">
+      <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24 relative z-20">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
       </main>
     )
@@ -87,14 +107,14 @@ export default function ProfileCompletePage() {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24">
+      <main className="flex min-h-screen items-center justify-center px-5 pb-20 pt-24 relative z-20">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
+    <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10 relative z-20 flex flex-col justify-center">
       <div className="mx-auto max-w-md">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-white md:text-3xl">
