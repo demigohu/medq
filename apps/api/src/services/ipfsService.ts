@@ -13,8 +13,13 @@ function ipfsToHttp(ipfsUri: string): string {
 
 /** Verification params from quest metadata (IPFS) */
 export interface QuestVerificationParams {
+  tokenIn?: string
+  tokenOut?: string
+  minAmountIn?: number
+  minAmountOut?: number
   minAmountTinybars?: number
   minTokenAmount?: number
+  tokenIdForMinAmount?: string
   tokenIds?: string[]
   actionType?: "swap" | "deposit" | "borrow" | "stake"
 }

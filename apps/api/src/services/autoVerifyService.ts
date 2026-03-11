@@ -26,7 +26,7 @@ export async function runAutoVerifyOnce() {
     return
   }
 
-  const quests = await getActiveQuestsForAutoVerify(50)
+  const quests = await getActiveQuestsForAutoVerify(100)
   if (!quests.length) {
     console.log("[AUTO-VERIFY] No active quests to verify")
     return
@@ -65,6 +65,12 @@ export async function runAutoVerifyOnce() {
       const sinceEpoch = acceptedAtEpoch
 
       const metadata = await fetchQuestMetadataFromIpfs(quest.metadata_uri)
+      if (!metadata) {
+        console.log(
+          `[AUTO-VERIFY] Skip quest ${quest.quest_id_on_chain}: metadata not available from IPFS (cannot verify token/amount)`
+        )
+        continue
+      }
 
       console.log(
         `[AUTO-VERIFY] Searching tx for quest ${quest.quest_id_on_chain} (participant=${quest.assigned_participant}, protocol=${quest.protocol_address}, since=${sinceEpoch})`

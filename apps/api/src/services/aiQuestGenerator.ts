@@ -4,6 +4,7 @@ import { z } from "zod"
 import { StructuredOutputParser } from "@langchain/core/output_parsers"
 
 import { env } from "../config/env"
+import { HEDERA_TOKENS } from "./txDataParser"
 import { createQuest, getQuestById } from "./questService"
 import { uploadQuestMetadata } from "./ipfsService"
 import { logAIGeneration, saveQuest } from "./dbService"
@@ -50,9 +51,11 @@ const questOutputSchema = z.object({
   metadataSnippet: z.string(),
   verificationParams: z
     .object({
+      tokenIn: z.string().optional(),
+      tokenOut: z.string().optional(),
+      minAmountIn: z.number().optional(),
+      minAmountOut: z.number().optional(),
       minAmountTinybars: z.number().optional(),
-      minTokenAmount: z.number().optional(),
-      tokenIds: z.array(z.string()).optional(),
       actionType: z.enum(["swap", "deposit", "borrow", "stake"]).optional(),
     })
     .optional(),
@@ -64,31 +67,47 @@ type QuestDraft = z.infer<typeof questOutputSchema>
 const questPrompt = ChatPromptTemplate.fromMessages([
   [
     "system",
-    `You are an AI quest designer for a DeFi quest platform on Hedera. 
-Generate concrete, verifiable quests that revolve around on-chain activity. 
-Return only valid JSON that matches the required schema.
+    `You are a DeFi quest designer for Medq, a Hedera-based quest platform. Generate ONE concrete, on-chain verifiable quest from the given goal and context. Output ONLY valid JSON — no markdown, no commentary.
 
-Available protocols on Hedera Testnet:
-- SaucerSwap Finance (0x0000000000000000000000000000000000004b40): Decentralized exchange for token swaps. Website: https://testnet.saucerswap.finance/swap
-- Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending and borrowing protocol. Website: https://testnet.bonzo.finance/
+## Output Format
+Return strictly valid JSON matching the schema. No code blocks, no explanation.
 
-When generating quests, consider the specific protocol's features and make quests actionable and verifiable.
-If the quest has a minimum amount (e.g. "swap at least 5 HBAR"), include verificationParams with minAmountTinybars (1 HBAR = 100000000 tinybars).
-Use actionType to match category: swap for DEX, deposit/borrow for lending.`,
+## Protocols (Hedera Testnet)
+- SaucerSwap (0x0000000000000000000000000000000000004b40): DEX — swaps, liquidity. https://testnet.saucerswap.finance/swap
+- Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending — deposit, borrow. https://testnet.bonzo.finance/
+
+## Field Rules
+
+**goal** (input): You receive this. Use it verbatim or refine minimally. It defines the quest objective.
+
+**verificationParams** (required for auto-verify): Parse the goal to derive:
+- tokenIn: Token participant sends (swap input, deposit). tokenOut: Token received (swap output, borrow). HBAR=WHBAR.
+- minAmountIn, minAmountOut: Human units. Mapping: USDC=${HEDERA_TOKENS.USDC.tokenId}, HCHF=${HEDERA_TOKENS.HCHF.tokenId}, KARATE=${HEDERA_TOKENS.KARATE.tokenId}, SAUCE=${HEDERA_TOKENS.SAUCE.tokenId}, WHBAR=${HEDERA_TOKENS.WHBAR.tokenId}.
+- Examples: swap USDC→Karate: tokenIn=USDC, tokenOut=KARATE, minAmountIn=10. Deposit: tokenIn=USDC, minAmountIn=10.
+- actionType: swap | deposit | borrow | stake. Infer from goal.
+
+**difficulty**: easy (simple, few steps) | medium | hard. Daily quests → easy/medium. Weekly → can be harder.
+
+**steps**: 3–6 ordered, actionable steps. Each: action + how to verify. End with tx confirmation on Hedera Explorer.
+
+**requirements**: 2–5 prerequisites. Wallet, tokens, protocol access.`,
   ],
   [
     "human",
-    `Project: {projectName}
+    `## Input
+Project: {projectName}
 Protocol: {protocol}
-Protocol Info: {protocolInfo}
+Protocol info: {protocolInfo}
 Network: {chain}
 Goal: {goal}
-Category hint: {categoryHint}
-Participant wallet: {participant}
-Reward amount: {rewardAmount} MEDQ
-Extra context: {extraNotes}
+Category: {categoryHint}
+Participant: {participant}
+Reward: {rewardAmount} MEDQ
+Notes: {extraNotes}
 
-Schema:
+Generate a quest that fulfills the goal. Derive verificationParams from the goal. If notes mention "daily" or "weekly", adjust complexity accordingly.
+
+## Schema
 {formatInstructions}`,
   ],
 ])

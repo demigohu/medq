@@ -8,9 +8,15 @@ import { createQuest, getQuestById } from "./questService"
 import { uploadQuestMetadata } from "./ipfsService"
 import { logAIGeneration, saveQuest } from "./dbService"
 import { getProtocolByAddress, getProtocolRouterAddress, PROTOCOLS } from "../lib/protocols"
+import { HEDERA_TOKENS } from "./txDataParser"
 import type { Campaign } from "./dbService"
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/
+
+const TOKEN_ID_MAP = [
+  ...Object.entries(HEDERA_TOKENS).map(([sym, t]) => `${sym}=${t.tokenId}`),
+  "HBAR=WHBAR (same as 0.0.15058)",
+].join(", ")
 
 const campaignQuestOutputSchema = z.object({
   title: z.string(),
@@ -36,9 +42,11 @@ const campaignQuestOutputSchema = z.object({
   metadataSnippet: z.string(),
   verificationParams: z
     .object({
-      minAmountTinybars: z.number().optional(),
-      minTokenAmount: z.number().optional(),
-      tokenIds: z.array(z.string()).optional(),
+      tokenIn: z.string().optional().describe("Token participant sends. Symbol or tokenId. Swap/deposit: input. HBAR=WHBAR."),
+      tokenOut: z.string().optional().describe("Token participant receives. Swap: output. Borrow: borrowed asset. HBAR=WHBAR."),
+      minAmountIn: z.number().optional().describe("Min human units of tokenIn. E.g. 10 = 10 USDC."),
+      minAmountOut: z.number().optional().describe("Min human units of tokenOut. For borrow."),
+      minAmountTinybars: z.number().optional().describe("1 HBAR = 100000000. For HBAR-min quests."),
       actionType: z.enum(["swap", "deposit", "borrow", "stake"]).optional(),
     })
     .optional(),
@@ -51,35 +59,49 @@ const parser = StructuredOutputParser.fromZodSchema(campaignQuestOutputSchema)
 const campaignQuestPrompt = ChatPromptTemplate.fromMessages([
   [
     "system",
-    `You are an AI quest designer for a DeFi quest platform on Hedera.
-Generate concrete, verifiable quests for partner campaigns. Return only valid JSON.
+    `You are a DeFi quest designer for Medq, a Hedera-based quest platform. Your task is to generate ONE concrete, on-chain verifiable quest from partner campaign data. Output ONLY valid JSON — no markdown, no commentary.
 
-Available protocols:
-- SaucerSwap Finance (0x0000000000000000000000000000000000004b40): DEX for swaps
-- Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending
+## Output Format
+Return strictly valid JSON matching the schema. No code blocks, no explanation.
 
-CRITICAL: Set "goal" to a one-line description that matches THIS specific quest (action type + protocol + amount). Examples:
-- Swap quest: "Swap 10 USDC to Karate on SaucerSwap Finance"
-- Deposit/supply quest: "Deposit 10 USDC on Bonzo Finance"
-- Borrow quest: "Borrow 100 HBAR from Bonzo Finance"
-Never use generic "Swap ? ? to ?" - use actual amounts and tokens from the campaign.
+## Available Protocols (Hedera Testnet)
+- SaucerSwap Finance (0x0000000000000000000000000000000000004b40): DEX — swaps, liquidity
+- Bonzo Finance (0x118dd8f2c0f2375496df1e069af1141fa034251b): Lending — deposit, borrow
 
-Include verificationParams with minAmountTinybars when quest has minimum amount (1 HBAR = 100000000 tinybars).
-IMPORTANT: Set medqAmountPerQuest - the MEDQ reward per quest. Base it on: pool size (USDC), reward per quest (USDC), 
-effort/difficulty. Typical range 10-100 MEDQ. Be generous for engagement.`,
+## Field Rules
+
+**goal** (required): One-line quest objective. Format: "[Action] [amount] [token] [optional: to/on/from] [protocol]". Must use real values from campaign (pool_amount, pool_token, template_type). Never use placeholders (e.g. "Swap ? ? to ?").
+
+**verificationParams** (required for auto-verify): On-chain verification will fail without this.
+- tokenIn: Token participant SENDS. Swap/deposit input. Use symbol or tokenId. Mapping: ${TOKEN_ID_MAP}. HBAR and WHBAR are equivalent.
+- tokenOut: Token participant RECEIVES. Swap output or borrow asset.
+- minAmountIn: Min human units of tokenIn (e.g. 10 = 10 USDC).
+- minAmountOut: For borrow — min tokenOut received.
+- minAmountTinybars: Only for HBAR-native. 1 HBAR = 100000000.
+- actionType: swap | deposit | borrow | stake — must match templateType.
+Examples: swap USDC→Karate: tokenIn=USDC, tokenOut=KARATE, minAmountIn=10. Deposit USDC: tokenIn=USDC, minAmountIn=10. Borrow USDC: tokenOut=USDC, minAmountOut=100.
+
+**difficulty**: easy (≤3 steps, low amount) | medium (4–5 steps, moderate) | hard (complex, high amount).
+
+**requirements**: 2–5 actionable prerequisites (wallet, tokens, protocol access). Be specific.
+
+**steps**: 3–6 ordered steps. Each step: clear action + what to verify. Last step often: confirm tx on Hedera Explorer.
+
+**medqAmountPerQuest**: MEDQ reward. Consider pool size, difficulty, engagement. Range 10–100. Favor generosity.`,
   ],
   [
     "human",
-    `Campaign data (full context):
+    `## Campaign Data
 {campaignContext}
 
-Protocol: {protocol}
-Protocol Info: {protocolInfo}
-Participant wallet: {participant}
+## Context
+- Protocol: {protocol}
+- Protocol info: {protocolInfo}
+- Participant: {participant}
 
-Use all campaign data above to generate a tailored quest. Determine medqAmountPerQuest based on pool value and engagement.
+Generate a quest from the campaign above. Every value (goal, verificationParams, amounts) must be derived from the campaign data. No placeholders.
 
-Schema:
+## Schema
 {formatInstructions}`,
   ],
 ])

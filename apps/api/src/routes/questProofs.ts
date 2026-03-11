@@ -87,6 +87,11 @@ questProofsRouter.post("/:id/submit-proof", async (req, res, next) => {
     const dbQuest = await getQuestByOnChainId(questId)
     const metadataUri = (quest as { metadataURI?: string }).metadataURI ?? dbQuest?.metadata_uri
     const metadata = await fetchQuestMetadataFromIpfs(metadataUri)
+    if (metadataUri && !metadata) {
+      return res.status(503).json({
+        message: "Unable to fetch quest metadata from IPFS. Please try again later.",
+      })
+    }
 
     // Verify transaction hash via Hedera Mirror Node (query first before saving)
     const protocolCategory = metadata?.category ?? dbQuest?.category
