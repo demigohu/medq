@@ -18,7 +18,7 @@ Referensi data untuk membuat campaign di Studio. Isi form Create Quest sesuai co
 | **Start date** | (pilih tanggal mulai) |
 | **End date** | (pilih tanggal akhir) |
 | **Quest type** | Swap |
-| **Protocol address** | `0x0000000000000000000000000000000000004b40` |
+| **Protocol address** | `0x0000000000000000000000000000000000004b40` |   ss
 | **Token** | USDC |
 | **Token amount per winner** | 5 |
 | **Winners** | 10 |
