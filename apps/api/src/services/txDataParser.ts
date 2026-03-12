@@ -198,7 +198,9 @@ function inferActionType(transactions: TxRecord[], participant: string): ActionT
     if (hasTokenIn && hasTokenOut) return "swap"
     if (hasHbarIn && hasTokenOut) return "swap"
     if (hasTokenIn && !hasTokenOut) return "deposit"
+    if (hasHbarIn && !hasTokenOut) return "deposit" // HBAR sent, no token received (e.g. Bonzo supply)
     if (hasTokenOut && !hasTokenIn) return "borrow"
+    if (hasHbarOut && !hasTokenIn) return "borrow" // HBAR received, no token sent (e.g. Bonzo borrow)
     if (hasHbarIn || hasHbarOut) return "swap"
   }
   return null
@@ -368,7 +370,8 @@ export function matchQuestRequirements(
     const acceptable =
       inferred === expected ||
       (fromCategory && inferred === fromCategory) ||
-      (expected === "swap" && inferred === "swap")
+      (expected === "swap" && inferred === "swap") ||
+      (expected === "stake" && inferred === "deposit") // stake ≈ deposit (lock/supply assets)
     if (!acceptable) {
       return {
         match: false,
