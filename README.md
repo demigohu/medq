@@ -1,11 +1,18 @@
 # Medq Quest – DeFi Gamification on Hedera
 
-Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. The project targets.
+[![Hedera Hello Future Apex 2026](https://img.shields.io/badge/Hedera-Hello%20Future%20Apex%202026-1d4ed8)](https://hellofuturehackathon.dev/)
+**Track:** Legacy Builders | **Built on from:** Hedera Ascension Hackathon
+
+Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through the Mirror Node, then distributes MEDQ rewards and badge NFTs via ERC‑8004 smart contracts. Originally built during Ascension, Apex adds **Partner Studio**, **new UI/UX**, **Escrow Campaign Contract** (USDC), and **auto verify**.
 
 ---
 
 ## 📌 Project Summary
-Medq Quest is an on-chain quest platform on Hedera that combines an AI quest generator with automatic proof verification. Users accept DeFi quests (swap, stake, lend), submit a transaction hash as evidence, have it verified via Mirror Node, and automatically receive MEDQ + badge NFTs from the QuestManager contract.
+
+Medq Quest is an on-chain quest platform on Hedera that combines an AI quest generator with automatic proof verification. Users accept DeFi quests (swap, stake, lend), complete the action, and the system auto-verifies via Mirror Node—MEDQ + badge NFTs minted without manual proof submission.
+
+**Project Description (≤100 words)**  
+Medq Quest gamifies Hedera DeFi by turning swaps, stakes, and lends into verifiable quests. Users complete actions on SaucerSwap/Bonzo; the system auto-verifies via Mirror Node and QuestManager mints MEDQ + BadgeNFTs—no manual proof submission. Apex additions: **Partner Studio**, **new UI/UX**, **Escrow Campaign Contract** (USDC), and **auto verify**. Hedera's low fees and ERC‑8004 enable micro-rewards and agent orchestration.
 
 
 ---
@@ -24,11 +31,24 @@ Medq Quest orchestrates ERC‑8004 agents, AI quest generation, and Hedera-nativ
 
 **Key features**
 - AI quest generator (Groq + Hedera Agent Kit)  
-- Quest lifecycle (create → accept → submit proof → auto completion)  
+- Quest lifecycle (create → accept → complete action → auto verify → completion)  
 - Mirror Node verification to guard against fake proofs  
 - MEDQ ERC-20 payout + BadgeNFT ERC-721 mint for every completion  
 - Supabase-backed XP, leaderboard, and profile completion  
 - Daily/weekly quests tailored to user wallet activity
+
+---
+
+## 🚀 What's New for Apex (Legacy Builders)
+
+Improvements since the Ascension baseline—emphasizing four major additions:
+
+| Apex Addition | Description |
+| --- | --- |
+| **Partner Campaign / Studio** | Partners can create and manage campaigns via the Studio flow. Define quests, attach budgets, no code required. |
+| **New UI/UX** | Full redesign of the entire app—all pages, flows, and layouts rethought for clearer navigation and better onboarding. |
+| **Escrow Campaign Contract** | On-chain USDC escrow so partner funds are locked until quest completion. Refund-to-partner on cancellation; transparent, trustless campaign funding. |
+| **Auto Verify** | Proof verification is fully automatic via Mirror Node. No tx hash submission user completes the DeFi action and the system detects + verifies it; MEDQ + badge minted without any manual step. |
 
 ---
 
@@ -88,7 +108,7 @@ graph LR
 
 ## 🔗 Hedera Integrations
 - **Smart Contract Service (EVM)** – QuestManager (ERC‑8004 compatible) orchestrates quests; RewardVault holds MEDQ ERC‑20 balances; BadgeNFT mints ERC‑721 reward NFTs.  
-- **JSON-RPC + Mirror Node** – Backend verifies submitted transaction hashes via Mirror Node before calling `recordCompletion`.  
+- **JSON-RPC + Mirror Node** – Backend auto-verifies DeFi transactions via Mirror Node before calling `recordCompletion`.  
 - **Wallet support** – Reown/Wagmi enforces Hedera Testnet (chain id 296) so users sign via JSON-RPC compatible wallets.  
 - **Planned** – Add Hedera Consensus Service for immutable quest audit logs and event streaming.
 
@@ -138,8 +158,8 @@ graph LR
    - Fund `RewardVault` with MEDQ ERC‑20 so quests can pay out rewards.
 
 4. **Environment variables**
-   - Copy `backend/env.example` → `backend/.env` and fill in RPC URL, controller keys, deployed contract addresses, Supabase, Groq, Pinata, Mirror Node URLs.
-   - Create `frontend/.env.local` with `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REOWN_PROJECT_ID`, and `NEXT_PUBLIC_APP_URL`.
+   - Copy `apps/api/env.example` → `apps/api/.env` and fill in RPC URL, controller keys, deployed contract addresses, Supabase, Groq, Pinata, Mirror Node URLs.
+   - Create `apps/web/.env.local` with `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REOWN_PROJECT_ID`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_CAMPAIGN_ESCROW_ADDRESS`, and `NEXT_PUBLIC_USDC_ADDRESS`.
 
 5. **Install dependencies**
    ```bash
@@ -162,18 +182,20 @@ graph LR
 ---
 
 ## 🔑 Environment Variables
-Update `.env`, `backend/.env`, and `contracts/.env` using the templates below.
+Update `apps/web/.env.local`, `apps/api/.env`, and `contracts/.env` using the templates below.
 
-### Frontend (`.env`)
+### Frontend (`apps/web/.env.local`)
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_QUEST_MANAGER_ADDRESS=0x...
 NEXT_PUBLIC_REOWN_PROJECT_ID=your_walletconnect_project_id
 NEXT_PUBLIC_MEDQ_TOKEN_ADDRESS=0x...
 NEXT_PUBLIC_BADGE_NFT_ADDRESS=0x...
+NEXT_PUBLIC_CAMPAIGN_ESCROW_ADDRESS=0x...
+NEXT_PUBLIC_USDC_ADDRESS=0x0000000000000000000000000000000000001549
 ```
 
-### Backend (`backend/.env`)
+### Backend (`apps/api/.env`)
 ```
 # RPC Configuration
 RPC_URL=https://testnet.hashio.io/api
@@ -185,6 +207,7 @@ BADGE_NFT_ADDRESS=
 REPUTATION_REGISTRY_ADDRESS=
 VALIDATION_REGISTRY_ADDRESS=
 AGENT_REGISTRY_ADAPTER_ADDRESS=
+CAMPAIGN_ESCROW_ADDRESS=0x...
 
 # Completion Oracle Address
 COMPLETION_ORACLE=
@@ -232,7 +255,7 @@ AGENT_METADATA_URI=ipfs://
 ## 🧪 Testing
 ```bash
 # Backend tests
-cd backend
+cd apps/api
 npm test
 npm run test:watch
 npm run test:coverage
@@ -252,7 +275,7 @@ Frontend currently relies on manual QA; Cypress suite is planned
 2. **Complete profile** (name + email) so daily/weekly quests can be generated.  
 3. **Browse quests** under `/quests`.  
 4. **Perform DeFi action** on the target protocol (swap, stake, lend).  
-5. **Submit proof** (tx hash) via the quest card; backend verifies via Mirror Node and triggers on-chain completion.  
+5. **Auto verify**backend detects the DeFi tx via Mirror Node and triggers on-chain completion; no manual proof submission.  
 6. **Claim rewards** – MEDQ + badge NFT minted automatically; XP/leaderboard update.  
 7. **Track progress** on the profile page or leaderboard tab.
 
@@ -273,26 +296,44 @@ Frontend currently relies on manual QA; Cypress suite is planned
   | QuestManager | `0x6364FBDa4469b6f84E3F2760aC5ac66c193B152b` |
   | Completion Oracle | `0xfDf033Ed041ce4F70c534fF8d79ac7B05681f9bc` |
   | Agent Controller | `0x8d50302F424f23f0B21c63B316b1a5308535b8BE` |
+  | Campaign Escrow | `0xf9c1e7b329bf75dd35e1461fa18c593901084c8b` |
 
 - **Live demo**: [Medq App](https://medq.space)  
 - **API base**: _https://api.medq.space_  
 
 ---
 
-## 🎥 Demo Assets
+## 🎥 Demo Assets (Apex Submission)
 - **Live Demo URL**: [Medq App](https://medq.space)
-- **Video Demo (YouTube)**: [Video Demo](https://youtu.be/wg6cnwwSqT8) 
-- **Pitch Deck (PDF)**: [Pitch Deck](https://www.canva.com/design/DAG5V0cF0Do/F8K48tVjqYH88-NSHA0sTQ/edit?utm_content=DAG5V0cF0Do&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
+- **Video Demo (YouTube)**: [Video Demo](https://youtu.be/wg6cnwwSqT8)
+- **Pitch Deck (PDF)**: [Pitch Deck](https://www.canva.com/design/DAG5V0cF0Do/F8K48tVjqYH88-NSHA0sTQ/edit?utm_content=DAG5V0cF0Do&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
 ---
 
+## 🏆 Hedera Hello Future Apex 2026 – Legacy Builders
 
+**Track:** Legacy Builders (Theme 5) | **Hackathon period:** 17 Feb – 23 Mar 2026
 
-## 🗺 Roadmap 
-- **Q1 2026** – Expand Hedera Agent Kit flows for multi-agent quest curation and protocol-specific templates.  
-- **Q2 2026** – MEDQ staking & DAO-style quest governance (voting on quest budgets, reward multipliers).  
-- **Q3 2026** – Mobile app + push notifications via WalletConnect/XMTP; richer quest analytics in dashboards.  
-- **Q4 2026** – Protocol marketplace so partners can publish quests, attach budgets, and track ROI.  
-- **Always-on** – Observability (Supabase CDC → Grafana) plus Mirror Node health monitors to ensure verification SLAs.
+| Link | URL |
+| --- | --- |
+| Hackathon website | https://hellofuturehackathon.dev/ |
+| Resources | https://hellofuturehackathon.dev/resources |
+| Apex Discord | https://go.hellofuturehackathon.dev/apex-discord |
+| Rules | https://go.hellofuturehackathon.dev/apex-rules |
+
+---
+
+## 🗺 Roadmap
+
+**Shipped (Apex):** Partner Studio, Escrow Campaign Contract, Auto Verify, New UI/UX.
+
+| Phase | Focus | Rationale |
+| --- | --- | --- |
+| **Next** | Partner analytics (ROI, completions, cost per quest) | Partners have Studio + escrow; they need visibility into campaign performance. |
+| **Next** | Observability, anti-replay, Mirror Node retries | Production readiness: logs, success rate, prevent tx hash reuse. |
+| **Next** | Deeper DeFi protocols (Bonzo stake/lend quests) | Currently swap-focused; expand to stake and lend for richer quest types. |
+| **Later** | MEDQ staking and DAO governance | Token utility and community-driven quest budgets. |
+| **Later** | Mobile, push notifications | Broader reach; depends on traction. |
 
 ---
 
