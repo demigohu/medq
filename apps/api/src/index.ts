@@ -19,7 +19,7 @@ app.use(cors())
 app.use(express.json({ limit: "1mb" }))
 
 app.get("/health", (_, res) => {
-  res.json({ status: "ok", network: env.RPC_URL })
+  res.json({ status: "ok", network: "Hedera testnet" })
 })
 
 app.use("/ai", aiRouter)
