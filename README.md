@@ -271,13 +271,32 @@ Frontend currently relies on manual QA; Cypress suite is planned
 ---
 
 ## 🎮 How to Use the App
+
+### User flow (complete quests)
 1. **Connect wallet** via the Reown modal (MetaMask + HashPack supported).  
 2. **Complete profile** (name + email) so daily/weekly quests can be generated.  
-3. **Browse quests** under `/quests`.  
+3. **Browse quests** under `/quests` (daily/weekly) or **campaigns** (partner-funded).  
 4. **Perform DeFi action** on the target protocol (swap, stake, lend).  
-5. **Auto verify**backend detects the DeFi tx via Mirror Node and triggers on-chain completion; no manual proof submission.  
+5. **Auto verify** – backend detects the DeFi tx via Mirror Node and triggers on-chain completion; no manual proof submission.  
 6. **Claim rewards** – MEDQ + badge NFT minted automatically; XP/leaderboard update.  
 7. **Track progress** on the profile page or leaderboard tab.
+
+### User flow (join campaign quest)
+1. **Browse campaigns** on the homepage or under `/campaigns`.  
+2. **Open a campaign** – view partner, quests, and USDC reward per completion.  
+3. **Associate USDC** – one-time: associate USDC (HTS) with your wallet so you can receive campaign rewards; required before joining.  
+4. **Join quest** – connect wallet, accept quest on-chain (sign tx).  
+5. **Complete DeFi action** – swap, stake, or lend on the protocol (SaucerSwap/Bonzo) as required.  
+6. **Auto verify** – system detects tx and completes quest; MEDQ + badge + **USDC from campaign escrow** distributed.  
+7. **Repeat** – join other quests in the same campaign while budget remains.
+
+### Partner flow (create campaign quests)
+1. **Connect wallet** and go to **Studio** (`/dashboard/studio`).  
+2. **Create campaign** – name, description, protocol (SaucerSwap/Bonzo), reward budget.  
+3. **Define quests** – action type (swap/deposit/stake), token amounts, evidence hints.  
+4. **Deposit USDC** – approve and deposit budget into Campaign Escrow contract; funds are locked on-chain.  
+5. **Activate campaign** – quests go live; users can browse under `/campaigns/[id]`.  
+6. **Monitor** – track completions, remaining budget; refund available if campaign is cancelled.
 
 ---
 
