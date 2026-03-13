@@ -137,12 +137,14 @@ campaignsRouter.get("/", async (req, res, next) => {
     const status = req.query.status as string | undefined
     const partner = req.query.partner as string | undefined
     const participant = req.query.participant as string | undefined
+    const joinedOnly = req.query.joinedOnly === "true"
     const limit = req.query.limit ? Number(req.query.limit) : 50
 
     const campaigns = await listCampaigns({
       ...(status && { status }),
       ...(partner && { partner_wallet: partner }),
-      ...(participant && /^0x[a-fA-F0-9]{40}$/.test(participant) && { participant }),
+      ...(participant != null && { participant }),
+      ...(joinedOnly && { joinedOnly }),
       limit,
     })
     return res.json({ campaigns })

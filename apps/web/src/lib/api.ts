@@ -165,6 +165,16 @@ class APIClient {
     }>(`/quests/users/${walletAddress}/quests`)
   }
 
+  /** Trigger daily/weekly quest generation (for users who failed on first try) */
+  async generateUserQuests(walletAddress: string) {
+    return this.request<{
+      success: boolean
+      message: string
+      quests: { daily?: { questId: number } | null; weekly?: { questId: number } | null }
+      errors?: { daily?: string; weekly?: string }
+    }>(`/quests/users/${walletAddress}/generate-quests`, { method: "POST" })
+  }
+
   async getAllQuests(participant?: string | null) {
     const url = participant
       ? `/quests?participant=${encodeURIComponent(participant)}`
@@ -176,12 +186,14 @@ class APIClient {
     status?: string
     partner?: string
     participant?: string
+    joinedOnly?: boolean
     limit?: number
   }) {
     const search = new URLSearchParams()
     if (params?.status) search.set("status", params.status)
     if (params?.partner) search.set("partner", params.partner)
-    if (params?.participant) search.set("participant", params.participant)
+    if (params?.participant != null) search.set("participant", params.participant)
+    if (params?.joinedOnly) search.set("joinedOnly", "true")
     if (params?.limit) search.set("limit", String(params.limit))
     const q = search.toString()
     return this.request<{ campaigns: Campaign[] }>(

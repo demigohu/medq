@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { api } from "@/lib/api"
 
 export interface QuestProgress {
@@ -121,6 +121,7 @@ export function useUserQuests(walletAddress: string | null) {
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const generationTriggered = useRef<string | null>(null)
 
   const fetchQuests = useCallback(async () => {
     if (!walletAddress) {
@@ -132,11 +133,24 @@ export function useUserQuests(walletAddress: string | null) {
     try {
       const res = await api.getUserQuests(walletAddress)
       setQuests(res.quests)
+      // Auto-retry generation if user has no daily/weekly (e.g. previous attempt failed)
+      const needsGeneration = !res.quests?.daily || !res.quests?.weekly
+      const alreadyTriggered = generationTriggered.current === walletAddress
+      if (needsGeneration && !alreadyTriggered) {
+        generationTriggered.current = walletAddress
+        api.generateUserQuests(walletAddress).then(() => {
+          setTimeout(() => fetchQuests(), 4000)
+        }).catch(() => { /* don't reset ref - avoid infinite retry loop */ })
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch quests")
     } finally {
       setLoading(false)
     }
+  }, [walletAddress])
+
+  useEffect(() => {
+    generationTriggered.current = null // reset when wallet changes
   }, [walletAddress])
 
   useEffect(() => {

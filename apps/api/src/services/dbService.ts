@@ -775,9 +775,13 @@ export async function listCampaigns(options?: {
   status?: string
   partner_wallet?: string
   participant?: string
+  joinedOnly?: boolean
   limit?: number
 }): Promise<Campaign[]> {
-  if (options?.participant) {
+  if (options?.joinedOnly && (!options?.participant || !/^0x[a-fA-F0-9]{40}$/.test(options.participant))) {
+    return []
+  }
+  if (options?.participant && /^0x[a-fA-F0-9]{40}$/.test(options.participant)) {
     const { data: participantRows, error: pe } = await supabase
       .from("campaign_participants")
       .select("campaign_id, quest_id_on_chain")

@@ -55,7 +55,11 @@ export default function QuestsPage() {
     }, []);
     const { address, isConnected } = useWallet();
     const { quests: userQuests } = useUserQuests(isConnected ? address : null);
-    const { campaigns: userCampaigns } = useCampaigns({ participant: isConnected && address ? address : undefined, limit: 20 });
+    const { campaigns: userCampaigns } = useCampaigns({
+        participant: isConnected && address ? address : "",
+        joinedOnly: true,
+        limit: 20,
+    });
 
     const dailyExpiry = (userQuests?.daily as { expiry_timestamp?: number } | undefined)?.expiry_timestamp;
     const weeklyExpiry = (userQuests?.weekly as { expiry_timestamp?: number } | undefined)?.expiry_timestamp;
