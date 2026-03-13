@@ -265,7 +265,8 @@ export function matchQuestRequirements(
     }
   }
 
-  if (params.tokenOut != null) {
+  // minAmountOut: only enforce for borrow (not swap — swap output depends on market)
+  if (params.tokenOut != null && actionType !== "swap") {
     const received = getAmountReceived(parsed, params.tokenOut)
     const decimals = getDecimalsForToken(params.tokenOut)
     const humanRecv = received / Math.pow(10, decimals)

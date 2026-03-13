@@ -82,8 +82,9 @@ Return strictly valid JSON matching the schema. No code blocks, no explanation.
 
 **verificationParams** (required for auto-verify): Parse the goal to derive:
 - tokenIn: Token participant sends (swap input, deposit). tokenOut: Token received (swap output, borrow). HBAR=WHBAR.
-- minAmountIn, minAmountOut: Human units. Mapping: USDC=${HEDERA_TOKENS.USDC.tokenId}, HCHF=${HEDERA_TOKENS.HCHF.tokenId}, KARATE=${HEDERA_TOKENS.KARATE.tokenId}, SAUCE=${HEDERA_TOKENS.SAUCE.tokenId}, WHBAR=${HEDERA_TOKENS.WHBAR.tokenId}.
-- Examples: swap USDC→Karate: tokenIn=USDC, tokenOut=KARATE, minAmountIn=10. Deposit: tokenIn=USDC, minAmountIn=10.
+- minAmountIn: Min human units of tokenIn. Use for swap, deposit. Mapping: USDC=${HEDERA_TOKENS.USDC.tokenId}, HCHF=${HEDERA_TOKENS.HCHF.tokenId}, KARATE=${HEDERA_TOKENS.KARATE.tokenId}, SAUCE=${HEDERA_TOKENS.SAUCE.tokenId}, WHBAR=${HEDERA_TOKENS.WHBAR.tokenId}.
+- minAmountOut: ONLY for borrow (min tokenOut received). NEVER use for swap — swap output depends on market price and cannot be predicted.
+- Examples: swap USDC→HCHF: tokenIn=USDC, tokenOut=HCHF, minAmountIn=10 (no minAmountOut). Deposit USDC: tokenIn=USDC, minAmountIn=10. Borrow USDC: tokenOut=USDC, minAmountOut=100.
 - actionType: swap | deposit | borrow | stake. Infer from goal.
 
 **difficulty**: easy (simple, few steps) | medium | hard. Daily quests → easy/medium. Weekly → can be harder.

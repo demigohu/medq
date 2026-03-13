@@ -434,6 +434,9 @@ export async function findMatchingTransactionHash(
         console.log(`[AUTO-VERIFY] Matched tx ${txId}`)
         return txId
       }
+      if (verified.error) {
+        console.log(`[AUTO-VERIFY] Tx ${txId} rejected: ${verified.error}`)
+      }
     }
   } catch (error) {
     console.warn("Mirror Node polling failed:", error)

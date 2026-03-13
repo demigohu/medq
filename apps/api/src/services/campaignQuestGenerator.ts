@@ -75,11 +75,11 @@ Return strictly valid JSON matching the schema. No code blocks, no explanation.
 **verificationParams** (required for auto-verify): On-chain verification will fail without this.
 - tokenIn: Token participant SENDS. Swap/deposit input. Use symbol or tokenId. Mapping: ${TOKEN_ID_MAP}. HBAR and WHBAR are equivalent.
 - tokenOut: Token participant RECEIVES. Swap output or borrow asset.
-- minAmountIn: Min human units of tokenIn (e.g. 10 = 10 USDC).
-- minAmountOut: For borrow — min tokenOut received.
+- minAmountIn: Min human units of tokenIn (e.g. 10 = 10 USDC). Use for swap, deposit.
+- minAmountOut: ONLY for borrow — min tokenOut received. NEVER use for swap (output depends on market, cannot be predicted).
 - minAmountTinybars: Only for HBAR-native. 1 HBAR = 100000000.
 - actionType: swap | deposit | borrow | stake — must match templateType.
-Examples: swap USDC→Karate: tokenIn=USDC, tokenOut=KARATE, minAmountIn=10. Deposit USDC: tokenIn=USDC, minAmountIn=10. Borrow USDC: tokenOut=USDC, minAmountOut=100.
+Examples: swap USDC→Karate: tokenIn=USDC, tokenOut=KARATE, minAmountIn=10 (no minAmountOut). Deposit USDC: tokenIn=USDC, minAmountIn=10. Borrow USDC: tokenOut=USDC, minAmountOut=100.
 
 **difficulty**: easy (≤3 steps, low amount) | medium (4–5 steps, moderate) | hard (complex, high amount).
 
