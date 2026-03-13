@@ -55,15 +55,18 @@ export function getProtocolByAddress(address: string): Protocol | null {
 }
 
 /**
- * Get the preferred router address for a protocol.
- * Falls back to the provided address if no routers are defined.
+ * Get the protocol address for quest creation (on-chain).
+ * Always returns EVM address (0x...) since smart contracts require it.
+ * routerAddresses may contain Contract IDs for Mirror Node verification only.
  */
 export function getProtocolRouterAddress(address: string): string {
   const protocol = getProtocolByAddress(address)
   if (!protocol) {
     return address
   }
-  return protocol.routerAddresses?.[0] || protocol.evmAddress
+  // Quest creation needs EVM format; routerAddresses can be Contract IDs (0.0.xxx)
+  const evmOnly = protocol.routerAddresses?.find((a) => a.startsWith("0x")) ?? protocol.evmAddress
+  return evmOnly || protocol.evmAddress
 }
 
 /**
