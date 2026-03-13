@@ -32,9 +32,10 @@ export const PROTOCOLS: Record<string, Protocol> = {
     website: "https://testnet.bonzo.finance/",
     description: "Lending and borrowing protocol on Hedera Testnet",
     logo: "ipfs://bafkreiex5codajdbxry4pj2eqhf23qi5yadqdkiptdxcqxwztw3cm2uabm", // TODO: Update with actual logo URL
+    // Use Contract ID (0.0.xxx): Mirror Node returns entity_id in this format
     routerAddresses: [
-      "0x118dd8f2c0f2375496df1e069af1141fa034251b",  // hbar
-      "0xd2d18df1cf6c69118e0bb861bc72f5942d1de516",  // except hbar
+      "0.0.7154915",  // main router
+      "0.0.7152023",  // HBAR market
     ],
   },
 }
