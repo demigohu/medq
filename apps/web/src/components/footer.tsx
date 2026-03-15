@@ -38,6 +38,10 @@ export default function Footer() {
                                     path: "/leaderboard",
                                 },
                                 {
+                                    label: "Feedback",
+                                    path: "/feedback",
+                                },
+                                {
                                     label: "Studio",
                                     path: "/dashboard/studio",
                                 },

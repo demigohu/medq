@@ -165,6 +165,53 @@ class APIClient {
     }>(`/quests/users/${walletAddress}/quests`)
   }
 
+  /**
+   * FEEDBACK
+   */
+  async listFeedback(params?: { user_id?: string; limit?: number }) {
+    const search = new URLSearchParams()
+    if (params?.user_id) search.set("user_id", params.user_id)
+    if (params?.limit) search.set("limit", String(params.limit))
+    const q = search.toString()
+    return this.request<{
+      feedback: Array<{
+        id: number
+        name?: string | null
+        role?: string | null
+        wallet_address?: string | null
+        username?: string | null
+        rating: number
+        message: string
+        created_at?: string
+      }>
+    }>(`/feedback${q ? `?${q}` : ""}`)
+  }
+
+  async createFeedback(data: {
+    name?: string
+    role?: string
+    wallet_address?: string
+    username?: string
+    rating: number
+    message: string
+  }) {
+    return this.request<{
+      feedback: {
+        id: number
+        name?: string | null
+        role?: string | null
+        wallet_address?: string | null
+        username?: string | null
+        rating: number
+        message: string
+        created_at?: string
+      }
+    }>("/feedback", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
   /** Trigger daily/weekly quest generation (for users who failed on first try) */
   async generateUserQuests(walletAddress: string) {
     return this.request<{

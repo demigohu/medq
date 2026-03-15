@@ -10,7 +10,7 @@ import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
 import ConnectWalletButton from "./connect-wallet-button";
 
-type CenterItemKey = "quests" | "leaderboard" | "dashboard/studio";
+type CenterItemKey = "quests" | "leaderboard" | "dashboard/studio" | "feedback";
 
 const CENTER_ITEMS: {
   key: CenterItemKey;
@@ -29,6 +29,12 @@ const CENTER_ITEMS: {
       label: "Leaderboard",
       title: "Leaderboard",
       description: "Track top contributors and projects in the Medq ecosystem in real time.",
+    },
+    {
+      key: "feedback",
+      label: "Feedback",
+      title: "Feedback",
+      description: "Share your feedback and help us improve Medq.",
     },
     {
       key: "dashboard/studio",

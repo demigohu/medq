@@ -4,6 +4,7 @@ import express from "express"
 import { env } from "./config/env"
 import { aiRouter } from "./routes/ai"
 import { campaignsRouter } from "./routes/campaigns"
+import { feedbackRouter } from "./routes/feedback"
 import { questProofsRouter } from "./routes/questProofs"
 import { questsRouter } from "./routes/quests"
 import { recordCompletion } from "./services/questService"
@@ -24,6 +25,7 @@ app.get("/health", (_, res) => {
 
 app.use("/ai", aiRouter)
 app.use("/campaigns", campaignsRouter)
+app.use("/feedback", feedbackRouter)
 app.use("/quests", questsRouter)
 app.use("/quests", questProofsRouter)
 

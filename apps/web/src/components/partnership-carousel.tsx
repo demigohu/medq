@@ -61,9 +61,9 @@ export default function PartnershipCarousel({ showHeading = true }: PartnershipC
           No active partnership campaigns. Check back later.
         </div>
       ) : (
-        <div className="relative">
+        <div className={`relative pb-4 ${showHeading ? "border border-[#1A1A1A]" : "border-b border-[#1A1A1A]"}` }>
           {/* Track */}
-          <div className={`overflow-hidden gap-4 py-4 rounded ${showHeading ? "border border-[#1A1A1A]" : "border-b border-[#1A1A1A]"} bg-black`}>
+          <div className={`overflow-hidden gap-4 py-4 rounded bg-black`}>
             <div
               className="flex transition-transform duration-500 ease-out"
               style={{

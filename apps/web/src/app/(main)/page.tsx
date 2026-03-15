@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAllQuests } from "@/hooks/useQuests";
 import Dither from "@/components/ui/Dither";
@@ -18,6 +19,7 @@ import Marquee from "react-fast-marquee";
 import { TypeAnimation } from "react-type-animation";
 import PartnershipCarousel from "@/components/partnership-carousel";
 import { FaqSection } from "@/components/faq-section";
+import { api } from "@/lib/api";
 // import TextType from "@/components/ui/TextType";
 // import dynamic from "next/dynamic";
 
@@ -123,11 +125,69 @@ const FALLBACK_CAMPAIGNS = [
   },
 ];
 
+type HomeFeedbackItem = {
+  quote: string;
+  name: string;
+  role: string;
+  rating: number;
+};
+
+const FALLBACK_FEEDBACK: HomeFeedbackItem[] = [
+  {
+    quote:
+      "We ran our first liquidity mining quest on Medq and saw a clear bump in on-chain activity without adding extra ops overhead.",
+    name: "Alex",
+    role: "Co‑founder, DeFi protocol",
+    rating: 5,
+  },
+  {
+    quote:
+      "The automatic verification based on on-chain data is a game changer—no more screenshots or manual proof submissions.",
+    name: "Maya",
+    role: "Community lead",
+    rating: 5,
+  },
+  {
+    quote:
+      "As a user, I love that quests are simple, transparent, and rewards hit my wallet quickly after completion.",
+    name: "Jordan",
+    role: "DeFi power user",
+    rating: 4,
+  },
+];
+
 export default function Home() {
   const { quests, loading } = useAllQuests();
   const activeCampaigns = quests.length > 0
     ? quests.slice(0, 8).map((q, i) => mapQuestToCard(q, i))
     : FALLBACK_CAMPAIGNS;
+
+  const [homeFeedback, setHomeFeedback] = useState<HomeFeedbackItem[]>(FALLBACK_FEEDBACK);
+
+  useEffect(() => {
+    const loadHomeFeedback = async () => {
+      try {
+        const res = await api.listFeedback({ limit: 3 });
+        const items = (res.feedback ?? []).map<HomeFeedbackItem>((f) => ({
+          quote: f.message,
+          name: f.name || f.username || "Community member",
+          role:
+            f.role ||
+            (f.wallet_address
+              ? `On-chain user ${f.wallet_address.slice(0, 6)}…${f.wallet_address.slice(-4)}`
+              : "Community member"),
+          rating: f.rating,
+        }));
+        if (items.length > 0) {
+          setHomeFeedback(items);
+        }
+      } catch (err) {
+        console.error("Failed to load home feedback", err);
+      }
+    };
+
+    loadHomeFeedback();
+  }, []);
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -392,6 +452,63 @@ export default function Home() {
                 </div>
               ))}
             </div> */}
+          </div>
+        </section>
+
+        {/* Feedback / Social Proof */}
+        <section className="border-b border-[#1A1A1A]">
+          <div className="p-10 space-y-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2 max-w-2xl">
+                <p className="text-[11px] font-semibold tracking-[0.22em] text-sky-400">
+                  COMMUNITY VOICES
+                </p>
+                <h2 className="text-2xl font-semibold md:text-3xl">
+                  What builders say about Medq.
+                </h2>
+                <p className="text-xs leading-relaxed text-zinc-400 md:text-sm">
+                  Medq is already helping DeFi users and teams run quests, drive on-chain
+                  activity, and reward their most active community members.
+                </p>
+              </div>
+
+              <Link href="/feedback" className="mt-2 md:mt-0">
+                <Button
+                  variant="default"
+                  className="rounded font-semibold bg-white text-black hover:bg-white/80"
+                >
+                  View all feedback
+                  <MoveRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              {homeFeedback.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex h-full flex-col justify-between rounded border border-zinc-800 bg-zinc-950/60 p-5"
+                >
+                  <p className="text-xs leading-relaxed text-zinc-200 md:text-sm">
+                    “{item.quote}”
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm">
+                    <div>
+                      <p className="font-semibold text-white">{item.name}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                        {item.role}
+                      </p>
+                    </div>
+                    {typeof item.rating === "number" && (
+                      <div className="inline-flex items-center gap-1 rounded-full border border-zinc-700 px-2 py-1 text-[11px] text-zinc-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        {item.rating.toFixed(1)} / 5
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
