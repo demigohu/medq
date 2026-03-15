@@ -31,15 +31,15 @@ export default function Footer() {
                             links: [
                                 {
                                     label: "Quest",
-                                    path: "#how-it-works",
+                                    path: "/quests",
                                 },
                                 {
                                     label: "Leaderboard",
-                                    path: "#leaderboard",
+                                    path: "/leaderboard",
                                 },
                                 {
-                                    label: "Partnership",
-                                    path: "#partnership",
+                                    label: "Studio",
+                                    path: "/dashboard/studio",
                                 },
                             ],
                         },

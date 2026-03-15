@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import {
@@ -41,11 +41,32 @@ type LeaderRow = {
     level: number;
     xp: number;
     deltaToday?: number;
-    distribution: { defi: number; social: number; nft: number };
+    // distribution: { defi: number; social: number; nft: number };
     trendPct?: number;
+    completed_quests: number;
 };
 
-function mapApiToLeaderRow(entry: { rank: number; name?: string; wallet_address: string; level: number; total_xp: number; avatar_url?: string }, idx: number): LeaderRow {
+const ITEMS_PER_PAGE = 10;
+
+function paginate<T>(items: T[], page: number, perPage: number) {
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const startIndex = (safePage - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, total);
+
+    return {
+        items: items.slice(startIndex, endIndex),
+        currentPage: safePage,
+        totalPages,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex,
+        total,
+    };
+}
+
+function mapApiToLeaderRow(entry: { rank: number; name?: string; wallet_address: string; level: number; total_xp: number; avatar_url?: string; completed_quests: number }, idx: number): LeaderRow {
     const shortAddr = `${entry.wallet_address.slice(0, 6)}...${entry.wallet_address.slice(-4)}`;
     return {
         rank: entry.rank ?? idx + 1,
@@ -54,106 +75,9 @@ function mapApiToLeaderRow(entry: { rank: number; name?: string; wallet_address:
         avatarSrc: entry.avatar_url || "/images/dummy-img-1.png",
         level: entry.level,
         xp: entry.total_xp,
-        distribution: { defi: 50, social: 30, nft: 20 },
+        completed_quests: entry.completed_quests,
     };
 }
-
-const FALLBACK_LEADERBOARD: LeaderRow[] = [
-    {
-        rank: 1,
-        name: "HederaMaster",
-        handle: "0xA...B52",
-        avatarSrc: "/images/dummy-img-1.png",
-        level: 99,
-        xp: 1240500,
-        deltaToday: 412,
-        distribution: { defi: 62, social: 28, nft: 10 },
-        trendPct: 12.1,
-    },
-    {
-        rank: 2,
-        name: "CryptoKing",
-        handle: "0x12...F81",
-        avatarSrc: "/images/dummy-img-2.png",
-        level: 95,
-        xp: 1180200,
-        distribution: { defi: 54, social: 34, nft: 12 },
-        trendPct: 6.4,
-    },
-    {
-        rank: 3,
-        name: "QuestSeeker",
-        handle: "0x9C...221",
-        avatarSrc: "https://github.com/evilrabbit.png",
-        level: 92,
-        xp: 950400,
-        distribution: { defi: 41, social: 44, nft: 15 },
-        trendPct: 3.2,
-    },
-    {
-        rank: 4,
-        name: "HBAR_Warrior",
-        handle: "0x2D...E40",
-        avatarSrc: "/images/partner-img-1.jpg",
-        level: 88,
-        xp: 820100,
-        distribution: { defi: 58, social: 30, nft: 12 },
-    },
-    {
-        rank: 5,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 45, social: 40, nft: 15 },
-    },
-    {
-        rank: 6,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 50, social: 35, nft: 15 },
-    },
-    {
-        rank: 7,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 30, social: 55, nft: 15 },
-    },
-    {
-        rank: 8,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 25, social: 45, nft: 30 },
-    },
-    {
-        rank: 9,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 62, social: 20, nft: 18 },
-    },
-    {
-        rank: 10,
-        name: "Web3Wizard",
-        handle: "0x88...712",
-        avatarSrc: "/images/partner-img-2.jpg",
-        level: 85,
-        xp: 790000,
-        distribution: { defi: 35, social: 40, nft: 25 },
-    },
-];
 
 const LEADERBOARD_META = {
     totalXpEarned: 124802950,
@@ -343,36 +267,23 @@ function HallOfFameOrbit({ rows }: { rows: LeaderRow[] }) {
     );
 }
 
-function QuestDistributionBar({
-    distribution,
-}: {
-    distribution: LeaderRow["distribution"];
-}) {
-    const total = distribution.defi + distribution.social + distribution.nft;
-    const defiPct = total === 0 ? 0 : (distribution.defi / total) * 100;
-    const socialPct = total === 0 ? 0 : (distribution.social / total) * 100;
-    const nftPct = Math.max(0, 100 - defiPct - socialPct);
+type LeaderboardTableProps = {
+    rows: LeaderRow[];
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+};
 
-    return (
-        <div className="w-full max-w-[240px]">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="flex h-full">
-                    <div className="h-full bg-white/60" style={{ width: `${defiPct}%` }} />
-                    <div
-                        className="h-full bg-sky-500"
-                        style={{ width: `${socialPct}%` }}
-                    />
-                    <div
-                        className="h-full bg-fuchsia-500"
-                        style={{ width: `${nftPct}%` }}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
+function LeaderboardTable({
+    rows,
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    onPageChange,
+}: LeaderboardTableProps) {
     return (
         <div className="overflow-hidden rounded border border-[#1A1A1A] bg-black">
             <Table className="w-full">
@@ -388,14 +299,17 @@ function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
                             Level
                         </TableHead>
                         <TableHead className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                            Quest distribution
+                            Completed quests
                         </TableHead>
+                        {/* <TableHead className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                            Quest distribution
+                        </TableHead> */}
                         <TableHead className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                             XP points
                         </TableHead>
-                        <TableHead className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        {/* <TableHead className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                             Trend
-                        </TableHead>
+                        </TableHead> */}
                     </TableRow>
                 </TableHeader>
 
@@ -445,8 +359,16 @@ function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
                             </TableCell>
 
                             <TableCell className="px-5 py-4 align-middle">
-                                <QuestDistributionBar distribution={row.distribution} />
+                                <div className="space-y-1">
+                                    <div className="text-sm font-semibold text-white">
+                                        {row.completed_quests}
+                                    </div>
+                                </div>
                             </TableCell>
+
+                            {/* <TableCell className="px-5 py-4 align-middle">
+                                <QuestDistributionBar distribution={row.distribution} />
+                            </TableCell> */}
 
                             <TableCell className="px-5 py-4 align-middle">
                                 <div className="space-y-1">
@@ -461,7 +383,7 @@ function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
                                 </div>
                             </TableCell>
 
-                            <TableCell className="px-5 py-4 text-right align-middle">
+                            {/* <TableCell className="px-5 py-4 text-right align-middle">
                                 {typeof row.trendPct === "number" ? (
                                     <span className="text-[11px] font-semibold text-emerald-400">
                                         +{row.trendPct}%
@@ -469,48 +391,61 @@ function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
                                 ) : (
                                     <span className="text-xs text-zinc-600">—</span>
                                 )}
-                            </TableCell>
+                            </TableCell> */}
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
 
             <div className="flex flex-col gap-3 border-t border-[#1A1A1A] px-5 py-4 text-xs text-zinc-500 md:flex-row md:items-center md:justify-between">
-                <div>Showing 1-10 of 100 players</div>
+                <div>
+                    {totalCount === 0
+                        ? "No players to display"
+                        : `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(
+                              currentPage * pageSize,
+                              totalCount
+                          )} of ${totalCount} players`}
+                </div>
                 <div className="flex items-center justify-between gap-3 md:justify-end">
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            className="grid h-9 w-9 place-items-center rounded border border-[#1A1A1A] bg-black text-zinc-300 hover:bg-white/5"
+                            className="grid h-9 w-9 place-items-center rounded border border-[#1A1A1A] bg-black text-zinc-300 hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-black"
                             aria-label="Previous page"
+                            onClick={() => onPageChange(currentPage - 1)}
+                            disabled={currentPage <= 1}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        {[1, 2, 3].map((p) => (
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                             <button
                                 key={p}
                                 type="button"
                                 className={cn(
                                     "grid h-9 w-9 place-items-center rounded border text-xs font-semibold",
-                                    p === 1
+                                    p === currentPage
                                         ? "border-sky-500/40 bg-sky-500/15 text-sky-100"
                                         : "border-[#1A1A1A] bg-black text-zinc-300 hover:bg-white/5"
                                 )}
-                                aria-current={p === 1 ? "page" : undefined}
+                                aria-current={p === currentPage ? "page" : undefined}
+                                onClick={() => onPageChange(p)}
                             >
                                 {p}
                             </button>
                         ))}
-                        <button
+                        {/* <button
                             type="button"
-                            className="grid h-9 w-11 place-items-center rounded border border-[#1A1A1A] bg-black text-xs font-semibold text-zinc-300 hover:bg-white/5"
+                            className="grid h-9 w-14 place-items-center rounded border border-[#1A1A1A] bg-black text-[10px] font-semibold text-zinc-400"
+                            disabled
                         >
-                            10
-                        </button>
+                            {pageSize} / page
+                        </button> */}
                         <button
                             type="button"
-                            className="grid h-9 w-9 place-items-center rounded border border-[#1A1A1A] bg-black text-zinc-300 hover:bg-white/5"
+                            className="grid h-9 w-9 place-items-center rounded border border-[#1A1A1A] bg-black text-zinc-300 hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-black"
                             aria-label="Next page"
+                            onClick={() => onPageChange(currentPage + 1)}
+                            disabled={currentPage >= totalPages}
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -521,87 +456,21 @@ function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
     );
 }
 
-function CurrentUserRow() {
-    const rank = 247;
-    const xpApprox = 2850;
-    const distribution = { defi: 40, social: 45, nft: 15 };
-    const trendPct = 4.8;
-
-    return (
-        <div className="flex flex-col gap-3 rounded border border-[#1A1A1A] bg-black px-5 py-3 text-sm shadow-[0_0_0_1px_rgba(255,255,255,0.03)] md:flex-row md:items-center">
-            {/* Rank */}
-            <div className="flex items-center gap-3 md:w-[72px]">
-                <span
-                    className={cn(
-                        "inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-semibold",
-                        rankBadgeClass(rank)
-                    )}
-                >
-                    {rank}
-                </span>
-            </div>
-
-            {/* User */}
-            <div className="flex flex-1 items-center gap-3 md:min-w-[210px]">
-                <div className="relative h-10 w-10 overflow-hidden rounded border border-white/10 bg-zinc-900">
-                    <Image
-                        src="/images/dummy-img-1.png"
-                        alt="Your profile"
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-white">
-                            Eva
-                        </span>
-                        <span className="rounded-full border border-[#3F4248] bg-zinc-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-300">
-                            You
-                        </span>
-                    </div>
-                    <div className="text-[11px] text-zinc-500">Level 8 • 12 quests</div>
-                </div>
-            </div>
-
-            {/* Level */}
-            <div className="md:w-[140px]">
-                <span className="inline-flex items-center rounded border border-[#1A1A1A] bg-[#18181B] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
-                    LVL 8
-                </span>
-            </div>
-
-            {/* Distribution */}
-            <div className="md:w-[260px]">
-                <QuestDistributionBar distribution={distribution} />
-            </div>
-
-            {/* XP + trend */}
-            <div className="flex flex-1 items-center justify-end gap-6 text-xs md:w-[170px] md:flex-none">
-                <div className="space-y-1 text-right">
-                    <div className="text-sm font-semibold text-white">
-                        ~ {xpApprox.toLocaleString("en")} XP
-                    </div>
-                    <div className="text-[11px] text-zinc-500">Season progress</div>
-                </div>
-                <div className="text-right">
-                    <span className="text-[11px] font-semibold text-emerald-400">
-                        +{trendPct}%
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 export default function LeaderboardPage() {
     const { leaderboard, loading } = useLeaderboard(100);
+    const [page, setPage] = useState(1);
+
     const leaderboardRows = useMemo(() => {
         if (leaderboard.length > 0) {
             return leaderboard.map((e, i) => mapApiToLeaderRow(e, i));
         }
-        return FALLBACK_LEADERBOARD;
+        return [];
     }, [leaderboard]);
+
+    const { items: pagedRows, currentPage, totalPages, total } = useMemo(
+        () => paginate(leaderboardRows, page, ITEMS_PER_PAGE),
+        [leaderboardRows, page]
+    );
 
     return (
         <main className="min-h-screen bg-black px-5 pb-20 pt-24 text-white md:px-10">
@@ -623,7 +492,14 @@ export default function LeaderboardPage() {
 
                     {/* <CurrentUserRow /> */}
 
-                    <LeaderboardTable rows={leaderboardRows} />
+                    <LeaderboardTable
+                        rows={pagedRows}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalCount={total}
+                        pageSize={ITEMS_PER_PAGE}
+                        onPageChange={setPage}
+                    />
                 </section>
             </div>
         </main>

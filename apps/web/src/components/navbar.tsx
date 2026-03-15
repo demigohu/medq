@@ -138,16 +138,16 @@ export default function Navbar() {
                   {CENTER_ITEMS.map((item) => {
                     // const active = activeItem === item.key;
                     return (
-                      <button
+                      <Link
+                        href={`/${item.key}`}
                         key={item.key}
                         type="button"
-                        onClick={() => setMobileOpen(false)}
                         className={cn(
                           "rounded-md px-3 py-2 text-[15px] font-bold transition-colors text-white",
                         )}
                       >
                         {item.label}
-                      </button>
+                      </Link>
                     );
                   })}
                 </nav>

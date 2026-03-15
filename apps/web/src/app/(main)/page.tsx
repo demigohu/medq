@@ -17,6 +17,7 @@ import Link from "next/link";
 import Marquee from "react-fast-marquee";
 import { TypeAnimation } from "react-type-animation";
 import PartnershipCarousel from "@/components/partnership-carousel";
+import { FaqSection } from "@/components/faq-section";
 // import TextType from "@/components/ui/TextType";
 // import dynamic from "next/dynamic";
 
@@ -394,80 +395,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section>
-          <div className="">
-            <div className="space-y-3 p-10 border-b border-[#1A1A1A]">
-              {/* <p className="text-[11px] font-semibold tracking-[0.22em] text-zinc-500">
-                QUESTIONS
-              </p> */}
-              <h2 className="text-2xl font-semibold md:text-3xl">FAQ</h2>
-              <p className="text-xs text-zinc-400 md:text-sm">
-                Everything you need to know about running and joining Medq quests.
-              </p>
-            </div>
-
-            <div>
-              <details className="group border-b border-[#1A1A1A] p-10">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-white">
-                  <span>What is Medq?</span>
-                  <span className="text-xs text-zinc-500 group-open:hidden">+</span>
-                  <span className="hidden text-xs text-zinc-500 group-open:inline">
-                    -
-                  </span>
-                </summary>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  Medq is an on-chain quest platform for DeFi and Web3 projects. Protocols
-                  can launch quests, and users complete verifiable on-chain tasks to earn
-                  MEDQ rewards and NFTs.
-                </p>
-              </details>
-
-              <details className="group border-b border-[#1A1A1A] p-10">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-white">
-                  <span>How do I join a quest?</span>
-                  <span className="text-xs text-zinc-500 group-open:hidden">+</span>
-                  <span className="hidden text-xs text-zinc-500 group-open:inline">
-                    -
-                  </span>
-                </summary>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  Connect your wallet, Complete Profile to get daily and weekly quests, and follow the on-chain
-                  instructions. Once your transaction is confirmed, and verified, you will receive rewards.
-                </p>
-              </details>
-
-              <details className="group border-b border-[#1A1A1A] p-10">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-white">
-                  <span>Which chains and protocols are supported?</span>
-                  <span className="text-xs text-zinc-500 group-open:hidden">+</span>
-                  <span className="hidden text-xs text-zinc-500 group-open:inline">
-                    -
-                  </span>
-                </summary>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  We&apos;re starting with the Hedera ecosystem and DeFi protocols like
-                  SaucerSwap and Bonzo. Support for more chains and partners will roll out
-                  over time.
-                </p>
-              </details>
-
-              <details className="group border-b border-[#1A1A1A] p-10">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-white">
-                  <span>How are rewards distributed?</span>
-                  <span className="text-xs text-zinc-500 group-open:hidden">+</span>
-                  <span className="hidden text-xs text-zinc-500 group-open:inline">
-                    -
-                  </span>
-                </summary>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  After your quest is verified, MEDQ and any associated NFTs are sent
-                  directly to your connected wallet. Some campaigns may distribute rewards
-                  on a schedule, which will be clearly shown before you join.
-                </p>
-              </details>
-            </div>
-          </div>
-        </section>
+        <FaqSection />
 
         <section className="relative overflow-hidden p-10">
 
@@ -501,11 +429,10 @@ export default function Home() {
                 READY TO START
               </p>
               <h2 className="text-2xl font-semibold md:text-3xl">
-                Launch your first Medq quest.
+                Ready to Begin Your Quest?
               </h2>
               <p className="max-w-xl text-xs leading-relaxed text-zinc-200 md:text-sm">
-                Whether you&apos;re a protocol, community, or solo builder, Medq lets you
-                design on-chain quests, reward real participation, and grow your ecosystem.
+                Connect your wallet to start earning rewards, complete challenges, and join the community of DeFi enthusiasts.
               </p>
             </div>
 

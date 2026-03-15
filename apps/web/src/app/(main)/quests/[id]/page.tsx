@@ -510,7 +510,7 @@ export default function QuestDetailPage() {
                     <Button
                       onClick={handleAcceptQuest}
                       disabled={acceptLoading || progressLoading}
-                      className="w-full rounded bg-white text-black hover:bg-white/90"
+                      className="w-full rounded font-semibold bg-white text-black hover:bg-white/90"
                     >
                       {acceptLoading ? (
                         <>
@@ -587,8 +587,8 @@ export default function QuestDetailPage() {
             </h2>
             <Button
               asChild
-              variant="outline"
-              className="rounded border-zinc-700 text-zinc-300 hover:bg-zinc-900 hover:text-white w-fit"
+              variant="default"
+              className="rounded font-semibold bg-white text-black hover:bg-white/90 w-fit"
             >
               <Link href="/quests">
                 View all quests
