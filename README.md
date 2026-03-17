@@ -9,11 +9,7 @@ Medq Quest turns Hedera DeFi actions into tiered quests, verifies proofs through
 
 ## 📌 Project Summary
 
-Medq Quest is an on-chain quest platform on Hedera that combines an AI quest generator with automatic proof verification. Users accept DeFi quests (swap, stake, lend), complete the action, and the system auto-verifies via Mirror Node—MEDQ + badge NFTs minted without manual proof submission.
-
-**Project Description (≤100 words)**  
-Medq Quest gamifies Hedera DeFi by turning swaps, stakes, and lends into verifiable quests. Users complete actions on SaucerSwap/Bonzo; the system auto-verifies via Mirror Node and QuestManager mints MEDQ + BadgeNFTs—no manual proof submission. Apex additions: **Partner Studio**, **new UI/UX**, **Escrow Campaign Contract** (USDC), and **auto verify**. Hedera's low fees and ERC‑8004 enable micro-rewards and agent orchestration.
-
+Medq Quest is an on-chain quest platform on Hedera that combines an AI quest generator with automatic proof verification. Users accept DeFi quests (swap, stake, lend), complete the action, and the system auto verifies via Mirror Node, MEDQ + badge NFTs minted without manual proof submission.
 
 ---
 
@@ -324,7 +320,8 @@ Frontend currently relies on manual QA; Cypress suite is planned
 
 ## 🎥 Demo Assets (Apex Submission)
 - **Live Demo URL**: [Medq App](https://medq.space)
-- **Video Demo (YouTube)**: [Video Demo](https://youtu.be/wg6cnwwSqT8)
+- **V1 Demo URL**: [V1 Medq App](https://legacy.medq.space)
+- **Video Demo (YouTube)**: [Video Demo](https://youtu.be/djGES3mYcKg?si=AYnSF8EX8VPlc_4G)
 - **Pitch Deck (PDF)**: [Pitch Deck](https://www.canva.com/design/DAG5V0cF0Do/F8K48tVjqYH88-NSHA0sTQ/edit?utm_content=DAG5V0cF0Do&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ---
